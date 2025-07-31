@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const instance = axios.create({
-  baseURL: 'http://localhost:5000/api', // Make sure this matches your backend PORT and API prefix
+  baseURL: 'https://chat-app-backend-0d86.onrender.com', // Make sure this matches your backend PORT and API prefix
   timeout: 5000, // Request timeout in milliseconds
   headers: {
     'Content-Type': 'application/json',

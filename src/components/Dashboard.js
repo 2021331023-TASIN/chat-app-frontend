@@ -32,7 +32,7 @@ const Dashboard = () => {
             setCurrentUser(parsedUser);
 
             // Initialize Socket.IO connection
-            const newSocket = io('http://localhost:5000'); // Connect to your backend socket.io server
+            const newSocket = io('https://chat-app-backend-0d86.onrender.com'); // Connect to your backend socket.io server
             setSocket(newSocket);
 
             newSocket.on('connect', () => {
