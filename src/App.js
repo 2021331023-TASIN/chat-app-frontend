@@ -12,7 +12,7 @@ import { ToastContainer } from 'react-toastify';
 function App() {
   // You can add state and a toggle function here to switch between lightTheme and darkTheme
   return (
-    <ThemeProvider theme={lightTheme}> // Wrap your app with the ThemeProvider
+    <ThemeProvider theme={lightTheme}> 
       <CssBaseline /> {/* Add CssBaseline for consistent styling */}
       <Router>
         <Routes>
