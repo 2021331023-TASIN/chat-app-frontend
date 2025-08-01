@@ -281,7 +281,7 @@ const Dashboard = () => {
                                             </Paper>
                                         </Box>
                                     );
-                                })}
+                                }))}
                         </Box>
                         <TextField
                             fullWidth
