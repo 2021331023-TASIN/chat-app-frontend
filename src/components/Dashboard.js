@@ -60,9 +60,6 @@ const Dashboard = () => {
             newSocket.on('newMessage', (message) => {
                 console.log('Received new message:', message);
                 setMessages((prevMessages) => {
-                    // Fix: Check if the message is from the current user
-                    // If it is, the handleSendMessage function has already updated the UI.
-                    // We only want to add messages from other users via the socket.
                     if (message.senderId === parsedUser.id) {
                         return prevMessages;
                     }
@@ -145,15 +142,12 @@ const Dashboard = () => {
 
     const handleSendMessage = async () => {
         if (newMessage.trim() && currentUser && selectedUser) {
-            // 1. Create a temporary message object for instant UI update
             const tempMessage = createTempMessage(newMessage.trim(), currentUser.id, selectedUser._id);
             
-            // 2. Immediately add the temporary message to the messages state
             setMessages((prevMessages) => [...prevMessages, tempMessage]);
-            setNewMessage(''); // Clear the input field right away
+            setNewMessage('');
 
             try {
-                // 3. Send the actual POST request to the backend in the background
                 const messageData = {
                     text: tempMessage.text,
                 };
@@ -161,22 +155,20 @@ const Dashboard = () => {
 
                 console.log('Message sent successfully:', response.data);
 
-                // 4. Update the temporary message with the real data from the server
                 setMessages((prevMessages) =>
                     prevMessages.map((msg) =>
                         msg._id === tempMessage._id
-                            ? { ...response.data, isSending: false } // Replace with server data
+                            ? { ...response.data, isSending: false }
                             : msg
                     )
                 );
             } catch (error) {
                 console.error('Error sending message:', error.response?.data?.message || 'Failed to send message.');
                 
-                // 5. If the request fails, mark the temporary message as an error
                 setMessages((prevMessages) =>
                     prevMessages.map((msg) =>
                         msg._id === tempMessage._id
-                            ? { ...msg, isSending: false, failed: true } // Mark as failed
+                            ? { ...msg, isSending: false, failed: true }
                             : msg
                     )
                 );
@@ -240,49 +232,53 @@ const Dashboard = () => {
                                     Start your conversation!
                                 </Typography>
                             ) : (
-                                messages.map((msg) => (
-                                    <Box key={msg._id} sx={{
-                                        display: 'flex',
-                                        justifyContent: msg.senderId === currentUser.id ? 'flex-end' : 'flex-start',
-                                        mb: 1
-                                    }}>
-                                        <Paper
-                                            variant="outlined"
-                                            sx={{
-                                                p: 1.5,
-                                                maxWidth: '70%',
-                                                backgroundColor: msg.senderId === currentUser.id ? '#e3f2fd' : '#f0f0f0',
-                                                borderRadius: '10px',
-                                                borderTopRightRadius: msg.senderId === currentUser.id ? 0 : '10px',
-                                                borderBottomRightRadius: msg.senderId === currentUser.id ? 0 : '10px',
-                                                borderTopLeftRadius: msg.senderId === currentUser.id ? '10px' : 0,
-                                                borderBottomLeftRadius: msg.senderId === currentUser.id ? '10px' : 0,
-                                                display: 'flex',
-                                                flexDirection: 'column',
-                                                position: 'relative',
-                                                opacity: msg.isSending ? 0.6 : 1
-                                            }}
-                                        >
-                                            <Typography variant="body2" sx={{ wordWrap: 'break-word' }}>
-                                                <strong>
-                                                    {msg.senderId === currentUser.id ? 'You' : msg.senderUsername}:
-                                                </strong> {msg.text}
-                                            </Typography>
-                                            <Box display="flex" alignItems="center" justifyContent="space-between">
-                                                <Typography variant="caption" color="textSecondary" sx={{ fontSize: '0.7rem' }}>
-                                                    {new Date(msg.createdAt).toLocaleTimeString()}
+                                messages.map((msg) => {
+                                    const createdAtDate = new Date(msg.createdAt);
+                                    const isValidDate = !isNaN(createdAtDate.getTime());
+
+                                    return (
+                                        <Box key={msg._id} sx={{
+                                            display: 'flex',
+                                            justifyContent: msg.senderId === currentUser.id ? 'flex-end' : 'flex-start',
+                                            mb: 1
+                                        }}>
+                                            <Paper
+                                                variant="outlined"
+                                                sx={{
+                                                    p: 1.5,
+                                                    maxWidth: '70%',
+                                                    backgroundColor: msg.senderId === currentUser.id ? '#e3f2fd' : '#f0f0f0',
+                                                    borderRadius: '10px',
+                                                    borderTopRightRadius: msg.senderId === currentUser.id ? 0 : '10px',
+                                                    borderBottomRightRadius: msg.senderId === currentUser.id ? 0 : '10px',
+                                                    borderTopLeftRadius: msg.senderId === currentUser.id ? '10px' : 0,
+                                                    borderBottomLeftRadius: msg.senderId === currentUser.id ? '10px' : 0,
+                                                    display: 'flex',
+                                                    flexDirection: 'column',
+                                                    position: 'relative',
+                                                    opacity: msg.isSending ? 0.6 : 1
+                                                }}
+                                            >
+                                                <Typography variant="body2" sx={{ wordWrap: 'break-word' }}>
+                                                    <strong>
+                                                        {msg.senderId === currentUser.id ? 'You' : msg.senderUsername}:
+                                                    </strong> {msg.text}
                                                 </Typography>
-                                                {msg.isSending && (
-                                                    <CircularProgress size={12} sx={{ ml: 1, color: '#9e9e9e' }} />
-                                                )}
-                                                {msg.failed && (
-                                                    <ErrorOutlineIcon sx={{ color: 'red', ml: 1, fontSize: '0.8rem' }} />
-                                                )}
-                                            </Box>
-                                        </Paper>
-                                    </Box>
-                                ))
-                            )}
+                                                <Box display="flex" alignItems="center" justifyContent="space-between">
+                                                    <Typography variant="caption" color="textSecondary" sx={{ fontSize: '0.7rem' }}>
+                                                        {isValidDate ? createdAtDate.toLocaleTimeString() : 'Invalid Date'}
+                                                    </Typography>
+                                                    {msg.isSending && (
+                                                        <CircularProgress size={12} sx={{ ml: 1, color: '#9e9e9e' }} />
+                                                    )}
+                                                    {msg.failed && (
+                                                        <ErrorOutlineIcon sx={{ color: 'red', ml: 1, fontSize: '0.8rem' }} />
+                                                    )}
+                                                </Box>
+                                            </Paper>
+                                        </Box>
+                                    );
+                                })}
                         </Box>
                         <TextField
                             fullWidth
