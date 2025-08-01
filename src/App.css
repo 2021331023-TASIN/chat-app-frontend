@@ -1,4 +1,4 @@
-.App {
+/* .App {
   text-align: center;
 }
 
@@ -35,4 +35,15 @@
   to {
     transform: rotate(360deg);
   }
+} */
+
+/* This CSS file is for global, non-component specific styles.
+The main theme (colors, fonts, etc.) is now handled by src/theme.js.
+*/
+
+body {
+  /* Set a smooth transition for background color when switching themes */
+  transition: background-color 0.3s ease;
 }
+
+/* Any other global styles you might need can go here */
