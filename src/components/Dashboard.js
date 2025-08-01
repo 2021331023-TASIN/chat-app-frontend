@@ -45,7 +45,6 @@ const Dashboard = () => {
                 console.log('Socket.IO connected!');
             });
             
-            // CORRECTED: Listening for 'newMessage' event from the backend
             newSocket.on('newMessage', (message) => {
                 console.log('Received new message:', message);
                 setMessages((prevMessages) => [...prevMessages, message]);
@@ -91,7 +90,6 @@ const Dashboard = () => {
         const fetchMessages = async () => {
             if (!selectedUser || !currentUser) return;
             try {
-                // Correct API route for fetching messages
                 const response = await axiosInstance.get(`/messages/${selectedUser._id}`);
                 setMessages(response.data);
             } catch (error) {
@@ -125,19 +123,18 @@ const Dashboard = () => {
         setSelectedUser(user);
     };
 
-    // CORRECTED: The message sending function now uses a POST request
     const handleSendMessage = async () => {
         if (newMessage.trim() && currentUser && selectedUser) {
             try {
+                // FIXED: Changed the key from 'message' to 'text'
                 const messageData = {
-                    message: newMessage.trim(),
+                    text: newMessage.trim(),
                 };
 
                 const response = await axiosInstance.post(`/messages/send/${selectedUser._id}`, messageData);
 
                 console.log('Message sent successfully:', response.data);
                 
-                // Add the new message to the state to update the UI instantly
                 setMessages((prevMessages) => [...prevMessages, response.data]);
                 setNewMessage('');
             } catch (error) {
