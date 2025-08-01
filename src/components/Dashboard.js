@@ -246,7 +246,6 @@ const Dashboard = () => {
         }
     };
     
-    // ✅ ADDED: Function to handle saving the avatar
     const handleSaveAvatar = async () => {
         if (!selectedAvatar) {
             toast.warn('Please select an avatar first.');
@@ -299,7 +298,6 @@ const Dashboard = () => {
                                     selected={selectedUser && selectedUser._id === userItem._id}
                                     sx={{ borderBottom: '1px solid', borderColor: 'divider', '&.Mui-selected': { backgroundColor: 'action.selected' } }}
                                 >
-                                    {/* ✅ ADDED: Avatar in the user list */}
                                     <ListItemAvatar>
                                         <Avatar alt={userItem.username} src={userItem.avatarUrl} />
                                     </ListItemAvatar>
@@ -308,20 +306,20 @@ const Dashboard = () => {
                             ))
                         )}
                     </List>
-                    <Button variant="outlined" sx={{ mt: 2 }} fullWidth onClick={handleLogout}>
-                        Logout
-                    </Button>
                 </Paper>
 
                 <Paper sx={{ flex: 3, display: 'flex', flexDirection: 'column', p: 3, backgroundColor: 'background.paper' }}>
                     {selectedUser ? (
                         <>
+                            {/* ✅ UPDATED: The chat header now contains the Logout button */}
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-                                {/* ✅ ADDED: Avatar in the chat header */}
                                 <Avatar alt={selectedUser.username} src={selectedUser.avatarUrl} />
-                                <Typography variant="h5" sx={{ color: 'primary.main', fontWeight: 'bold' }}>
+                                <Typography variant="h5" sx={{ color: 'primary.main', fontWeight: 'bold', flexGrow: 1 }}>
                                     Chat with {selectedUser.username}
                                 </Typography>
+                                <Button variant="contained" onClick={handleLogout} sx={{ color: '#fff' }}>
+                                    Logout
+                                </Button>
                             </Box>
                             <Divider sx={{ mb: 2 }} />
                             <Box 
@@ -414,7 +412,6 @@ const Dashboard = () => {
                     )}
                 </Paper>
                 
-                {/* ✅ ADDED: The avatar picker UI */}
                 {showAvatarPicker && (
                     <Box sx={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: 400, bgcolor: 'background.paper', boxShadow: 24, p: 4, borderRadius: 2, zIndex: 1000 }}>
                         <Typography variant="h6" mb={2}>Choose your avatar</Typography>
