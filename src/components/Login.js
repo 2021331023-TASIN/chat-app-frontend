@@ -7,7 +7,8 @@ import 'react-toastify/dist/ReactToastify.css';
 import axios from 'axios';
 import WhatsAppIcon from '@mui/icons-material/WhatsApp';
 
-const API_URL = 'https://chat-app-backend-0d86.onrender.com';
+// ✅ UPDATED: The API URL now includes the '/api' prefix
+const API_URL = 'https://chat-app-backend-0d86.onrender.com/api';
 
 const whatsAppAuthTheme = createTheme({
     palette: {
@@ -34,6 +35,7 @@ const Login = () => {
         e.preventDefault();
         setLoading(true);
         try {
+            // ✅ UPDATED: The request now uses the correct URL: /api/users/login
             const response = await axios.post(`${API_URL}/users/login`, { email, password });
             const { token, user } = response.data;
             localStorage.setItem('token', token);
