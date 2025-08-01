@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { Container, Typography, Button, Box, CircularProgress, Paper, List, ListItem, ListItemText, Divider, TextField, Avatar, ListItemAvatar } from '@mui/material';
-import { createTheme, ThemeProvider } from '@mui/material/styles';
+import { Container, Typography, Button, Box, CircularProgress, Paper, List, ListItem, ListItemText, Divider, TextField, Avatar, ListItemAvatar, IconButton } from '@mui/material';
+import { createTheme, ThemeProvider, useTheme } from '@mui/material/styles';
+import useMediaQuery from '@mui/material/useMediaQuery';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -8,6 +9,7 @@ import axiosInstance from '../utils/AxiosInstance';
 import { io } from 'socket.io-client';
 import SendIcon from '@mui/icons-material/Send';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 
 const BACKEND_SOCKET_URL = 'https://chat-app-backend-0d86.onrender.com';
 
@@ -80,6 +82,10 @@ const Dashboard = () => {
     const messagesEndRef = useRef(null);
     const [showAvatarPicker, setShowAvatarPicker] = useState(false);
     const [selectedAvatar, setSelectedAvatar] = useState(null);
+    
+    const theme = useTheme();
+    const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
+    const [showUsersList, setShowUsersList] = useState(true);
 
     useEffect(() => {
         const token = localStorage.getItem('token');
@@ -199,6 +205,14 @@ const Dashboard = () => {
 
     const handleSelectUser = (user) => {
         setSelectedUser(user);
+        if (!isDesktop) {
+            setShowUsersList(false);
+        }
+    };
+    
+    const handleGoBack = () => {
+        setShowUsersList(true);
+        setSelectedUser(null);
     };
 
     const handleSendMessage = async () => {
@@ -272,145 +286,181 @@ const Dashboard = () => {
             </Container>
         );
     }
+    
+    const renderUsersList = (
+        <Paper sx={{ flex: 1, minWidth: isDesktop ? 250 : '100%', p: 3, overflowY: 'auto', backgroundColor: 'background.paper' }}>
+            <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+                <Typography variant="h6">Users</Typography>
+                <Button variant="contained" onClick={() => setShowAvatarPicker(true)} size="small" sx={{ color: '#fff' }}>
+                    Choose Avatar
+                </Button>
+            </Box>
+            <Divider />
+            <List>
+                {users.length === 0 ? (
+                    <Typography variant="body2" color="text.secondary" sx={{ mt: 2, textAlign: 'center' }}>
+                        No other users found.
+                    </Typography>
+                ) : (
+                    users.map((userItem) => (
+                        <ListItem
+                            button
+                            key={userItem._id}
+                            onClick={() => handleSelectUser(userItem)}
+                            selected={selectedUser && selectedUser._id === userItem._id}
+                            sx={{ borderBottom: '1px solid', borderColor: 'divider', '&.Mui-selected': { backgroundColor: 'action.selected' } }}
+                        >
+                            <ListItemAvatar>
+                                <Avatar alt={userItem.username} src={userItem.avatarUrl} />
+                            </ListItemAvatar>
+                            <ListItemText primary={userItem.username} secondary={userItem.email} />
+                        </ListItem>
+                    ))
+                )}
+            </List>
+        </Paper>
+    );
+
+    const renderChatWindow = (
+        <Paper sx={{ flex: 3, display: 'flex', flexDirection: 'column', p: 3, backgroundColor: 'background.paper', width: isDesktop ? 'auto' : '100%', height: '100%' }}>
+            {selectedUser ? (
+                <>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+                        {!isDesktop && (
+                            <IconButton onClick={handleGoBack}>
+                                <ArrowBackIcon />
+                            </IconButton>
+                        )}
+                        <Avatar alt={selectedUser.username} src={selectedUser.avatarUrl} />
+                        <Typography variant="h5" sx={{ color: 'primary.main', fontWeight: 'bold', flexGrow: 1 }}>
+                            Chat with {selectedUser.username}
+                        </Typography>
+                        {/* ✅ UPDATED: The Logout button with increased size */}
+                        <Button
+                            variant="contained"
+                            onClick={handleLogout}
+                            sx={{
+                                color: '#fff',
+                                padding: '10px 20px',
+                                fontSize: '1rem',
+                            }}
+                        >
+                            Logout
+                        </Button>
+                    </Box>
+                    <Divider sx={{ mb: 2 }} />
+                    <Box 
+                        ref={messagesEndRef}
+                        sx={{ flexGrow: 1, overflowY: 'auto', p: 2, border: '1px solid', borderColor: 'divider', borderRadius: 2, mb: 2, backgroundColor: 'background.default' }}
+                    >
+                        {messages.length === 0 ? (
+                            <Typography color="text.secondary" textAlign="center">
+                                Start your conversation!
+                            </Typography>
+                        ) : (
+                            messages.map((msg) => {
+                                const createdAtDate = new Date(msg.createdAt);
+                                const isValidDate = !isNaN(createdAtDate.getTime());
+
+                                return (
+                                    <Box key={msg._id} sx={{
+                                        display: 'flex',
+                                        justifyContent: msg.senderId === currentUser.id ? 'flex-end' : 'flex-start',
+                                        mb: 1
+                                    }}>
+                                        <Paper
+                                            variant="outlined"
+                                            sx={{
+                                                p: 1.5,
+                                                maxWidth: '70%',
+                                                backgroundColor: msg.senderId === currentUser.id ? 'primary.light' : 'background.paper',
+                                                borderRadius: '16px',
+                                                borderTopRightRadius: msg.senderId === currentUser.id ? 2 : '16px',
+                                                borderBottomRightRadius: msg.senderId === currentUser.id ? 2 : '16px',
+                                                borderTopLeftRadius: msg.senderId === currentUser.id ? '16px' : 2,
+                                                borderBottomLeftRadius: msg.senderId === currentUser.id ? '16px' : 2,
+                                                display: 'flex',
+                                                flexDirection: 'column',
+                                                position: 'relative',
+                                                opacity: msg.isSending ? 0.6 : 1,
+                                            }}
+                                        >
+                                            <Typography variant="body2" sx={{ wordWrap: 'break-word', color: 'text.primary' }}>
+                                                <strong>
+                                                    {msg.senderId === currentUser.id ? 'You' : msg.senderUsername}:
+                                                </strong> {msg.text}
+                                            </Typography>
+                                            <Box display="flex" alignItems="center" justifyContent="space-between" mt={0.5}>
+                                                <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.7rem' }}>
+                                                    {isValidDate ? createdAtDate.toLocaleTimeString() : 'Invalid Date'}
+                                                </Typography>
+                                                {msg.isSending && (
+                                                    <CircularProgress size={12} sx={{ ml: 1, color: 'text.secondary' }} />
+                                                )}
+                                                {msg.failed && (
+                                                    <ErrorOutlineIcon sx={{ color: 'error.main', ml: 1, fontSize: '0.8rem' }} />
+                                                )}
+                                            </Box>
+                                        </Paper>
+                                    </Box>
+                                );
+                            })
+                        )}
+                    </Box>
+                    <Box sx={{ display: 'flex', gap: 1 }}>
+                        <TextField
+                            fullWidth
+                            variant="outlined"
+                            placeholder="Type your message..."
+                            value={newMessage}
+                            onChange={(e) => setNewMessage(e.target.value)}
+                            onKeyPress={(e) => { if (e.key === 'Enter') handleSendMessage(); }}
+                            size="small"
+                            sx={{ backgroundColor: 'background.paper' }}
+                        />
+                        <Button
+                            variant="contained"
+                            color="secondary"
+                            onClick={handleSendMessage}
+                            disabled={!newMessage.trim()}
+                            endIcon={<SendIcon />}
+                            sx={{ borderRadius: '8px' }}
+                        >
+                            Send
+                        </Button>
+                    </Box>
+                </>
+            ) : (
+                <Box sx={{ flexGrow: 1, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                    <Typography variant="h6" color="text.secondary">
+                        Select a user from the left to start chatting!
+                    </Typography>
+                </Box>
+            )}
+        </Paper>
+    );
 
     return (
         <ThemeProvider theme={whatsAppTheme}>
-            <Container maxWidth="lg" sx={{ mt: 8, display: 'flex', gap: 3, height: 'calc(100vh - 100px)', backgroundColor: 'background.default' }}>
-                <Paper sx={{ flex: 1, minWidth: 250, p: 3, overflowY: 'auto', backgroundColor: 'background.paper' }}>
-                    <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-                        <Typography variant="h6">Users</Typography>
-                        <Button variant="contained" onClick={() => setShowAvatarPicker(true)} size="small" sx={{ color: '#fff' }}>
-                            Choose Avatar
-                        </Button>
-                    </Box>
-                    <Divider />
-                    <List>
-                        {users.length === 0 ? (
-                            <Typography variant="body2" color="text.secondary" sx={{ mt: 2, textAlign: 'center' }}>
-                                No other users found.
-                            </Typography>
-                        ) : (
-                            users.map((userItem) => (
-                                <ListItem
-                                    button
-                                    key={userItem._id}
-                                    onClick={() => handleSelectUser(userItem)}
-                                    selected={selectedUser && selectedUser._id === userItem._id}
-                                    sx={{ borderBottom: '1px solid', borderColor: 'divider', '&.Mui-selected': { backgroundColor: 'action.selected' } }}
-                                >
-                                    <ListItemAvatar>
-                                        <Avatar alt={userItem.username} src={userItem.avatarUrl} />
-                                    </ListItemAvatar>
-                                    <ListItemText primary={userItem.username} secondary={userItem.email} />
-                                </ListItem>
-                            ))
+            <Container maxWidth="lg" sx={{ mt: 8, display: 'flex', gap: isDesktop ? 3 : 0, height: 'calc(100vh - 100px)', backgroundColor: 'background.default' }}>
+                {isDesktop ? (
+                    <>
+                        {renderUsersList}
+                        {renderChatWindow}
+                    </>
+                ) : (
+                    <>
+                        {showUsersList && renderUsersList}
+                        {!showUsersList && selectedUser && renderChatWindow}
+                        {!showUsersList && !selectedUser && (
+                           <Box sx={{ flexGrow: 1, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                             <Typography variant="h6" color="text.secondary">
+                               Select a user from the list to chat!
+                             </Typography>
+                           </Box>
                         )}
-                    </List>
-                </Paper>
-
-                <Paper sx={{ flex: 3, display: 'flex', flexDirection: 'column', p: 3, backgroundColor: 'background.paper' }}>
-                    {selectedUser ? (
-                        <>
-                            {/* ✅ UPDATED: The chat header now contains the Logout button */}
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-                                <Avatar alt={selectedUser.username} src={selectedUser.avatarUrl} />
-                                <Typography variant="h5" sx={{ color: 'primary.main', fontWeight: 'bold', flexGrow: 1 }}>
-                                    Chat with {selectedUser.username}
-                                </Typography>
-                                <Button variant="contained" onClick={handleLogout} sx={{ color: '#fff' }}>
-                                    Logout
-                                </Button>
-                            </Box>
-                            <Divider sx={{ mb: 2 }} />
-                            <Box 
-                                ref={messagesEndRef}
-                                sx={{ flexGrow: 1, overflowY: 'auto', p: 2, border: '1px solid', borderColor: 'divider', borderRadius: 2, mb: 2, backgroundColor: 'background.default' }}
-                            >
-                                {messages.length === 0 ? (
-                                    <Typography color="text.secondary" textAlign="center">
-                                        Start your conversation!
-                                    </Typography>
-                                ) : (
-                                    messages.map((msg) => {
-                                        const createdAtDate = new Date(msg.createdAt);
-                                        const isValidDate = !isNaN(createdAtDate.getTime());
-
-                                        return (
-                                            <Box key={msg._id} sx={{
-                                                display: 'flex',
-                                                justifyContent: msg.senderId === currentUser.id ? 'flex-end' : 'flex-start',
-                                                mb: 1
-                                            }}>
-                                                <Paper
-                                                    variant="outlined"
-                                                    sx={{
-                                                        p: 1.5,
-                                                        maxWidth: '70%',
-                                                        backgroundColor: msg.senderId === currentUser.id ? 'primary.light' : 'background.paper',
-                                                        borderRadius: '16px',
-                                                        borderTopRightRadius: msg.senderId === currentUser.id ? 2 : '16px',
-                                                        borderBottomRightRadius: msg.senderId === currentUser.id ? 2 : '16px',
-                                                        borderTopLeftRadius: msg.senderId === currentUser.id ? '16px' : 2,
-                                                        borderBottomLeftRadius: msg.senderId === currentUser.id ? '16px' : 2,
-                                                        display: 'flex',
-                                                        flexDirection: 'column',
-                                                        position: 'relative',
-                                                        opacity: msg.isSending ? 0.6 : 1,
-                                                    }}
-                                                >
-                                                    <Typography variant="body2" sx={{ wordWrap: 'break-word', color: 'text.primary' }}>
-                                                        <strong>
-                                                            {msg.senderId === currentUser.id ? 'You' : msg.senderUsername}:
-                                                        </strong> {msg.text}
-                                                    </Typography>
-                                                    <Box display="flex" alignItems="center" justifyContent="space-between" mt={0.5}>
-                                                        <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.7rem' }}>
-                                                            {isValidDate ? createdAtDate.toLocaleTimeString() : 'Invalid Date'}
-                                                        </Typography>
-                                                        {msg.isSending && (
-                                                            <CircularProgress size={12} sx={{ ml: 1, color: 'text.secondary' }} />
-                                                        )}
-                                                        {msg.failed && (
-                                                            <ErrorOutlineIcon sx={{ color: 'error.main', ml: 1, fontSize: '0.8rem' }} />
-                                                        )}
-                                                    </Box>
-                                                </Paper>
-                                            </Box>
-                                        );
-                                    })
-                                )}
-                            </Box>
-                            <Box sx={{ display: 'flex', gap: 1 }}>
-                                <TextField
-                                    fullWidth
-                                    variant="outlined"
-                                    placeholder="Type your message..."
-                                    value={newMessage}
-                                    onChange={(e) => setNewMessage(e.target.value)}
-                                    onKeyPress={(e) => { if (e.key === 'Enter') handleSendMessage(); }}
-                                    size="small"
-                                    sx={{ backgroundColor: 'background.paper' }}
-                                />
-                                <Button
-                                    variant="contained"
-                                    color="secondary"
-                                    onClick={handleSendMessage}
-                                    disabled={!newMessage.trim()}
-                                    endIcon={<SendIcon />}
-                                    sx={{ borderRadius: '8px' }}
-                                >
-                                    Send
-                                </Button>
-                            </Box>
-                        </>
-                    ) : (
-                        <Box sx={{ flexGrow: 1, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                            <Typography variant="h6" color="text.secondary">
-                                Select a user from the left to start chatting!
-                            </Typography>
-                        </Box>
-                    )}
-                </Paper>
+                    </>
+                )}
                 
                 {showAvatarPicker && (
                     <Box sx={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: 400, bgcolor: 'background.paper', boxShadow: 24, p: 4, borderRadius: 2, zIndex: 1000 }}>
