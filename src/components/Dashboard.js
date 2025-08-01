@@ -155,10 +155,17 @@ const Dashboard = () => {
 
                 console.log('Message sent successfully:', response.data);
 
+                // FIX: Explicitly set the senderId from the currentUser
+                const newMessageFromBackend = {
+                    ...response.data,
+                    isSending: false,
+                    senderId: currentUser.id,
+                };
+                
                 setMessages((prevMessages) =>
                     prevMessages.map((msg) =>
                         msg._id === tempMessage._id
-                            ? { ...response.data, isSending: false }
+                            ? newMessageFromBackend
                             : msg
                     )
                 );
