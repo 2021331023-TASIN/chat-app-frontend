@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { Container, Typography, Button, Box, CircularProgress, Paper, List, ListItem, ListItemText, Divider, TextField } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
@@ -29,6 +29,9 @@ const Dashboard = () => {
     const [messages, setMessages] = useState([]);
     const [newMessage, setNewMessage] = useState('');
     const [socket, setSocket] = useState(null);
+
+    // ✅ ADDED: Create a ref for the message container
+    const messagesEndRef = useRef(null);
 
     useEffect(() => {
         const token = localStorage.getItem('token');
@@ -126,6 +129,16 @@ const Dashboard = () => {
 
     }, [selectedUser, currentUser]);
 
+    // ✅ ADDED: A new useEffect hook to automatically scroll to the bottom
+    useEffect(() => {
+        const scrollToBottom = () => {
+            if (messagesEndRef.current) {
+                messagesEndRef.current.scrollTop = messagesEndRef.current.scrollHeight;
+            }
+        };
+        scrollToBottom();
+    }, [messages]);
+
     const handleLogout = () => {
         if (socket && currentUser) {
             socket.disconnect();
@@ -155,7 +168,6 @@ const Dashboard = () => {
 
                 console.log('Message sent successfully:', response.data);
 
-                // FIX: Explicitly set the senderId from the currentUser
                 const newMessageFromBackend = {
                     ...response.data,
                     isSending: false,
@@ -233,7 +245,11 @@ const Dashboard = () => {
                             Chat with {selectedUser.username}
                         </Typography>
                         <Divider sx={{ mb: 2 }} />
-                        <Box sx={{ flexGrow: 1, overflowY: 'auto', p: 2, border: '1px solid', borderColor: 'divider', borderRadius: 2, mb: 2 }}>
+                        <Box 
+                            // ✅ ADDED: Attach the ref to the messages container
+                            ref={messagesEndRef}
+                            sx={{ flexGrow: 1, overflowY: 'auto', p: 2, border: '1px solid', borderColor: 'divider', borderRadius: 2, mb: 2 }}
+                        >
                             {messages.length === 0 ? (
                                 <Typography color="text.secondary" textAlign="center">
                                     Start your conversation!
