@@ -126,7 +126,6 @@ const Dashboard = () => {
     const handleSendMessage = async () => {
         if (newMessage.trim() && currentUser && selectedUser) {
             try {
-                // FIXED: Changed the key from 'message' to 'text'
                 const messageData = {
                     text: newMessage.trim(),
                 };
@@ -201,6 +200,7 @@ const Dashboard = () => {
                             ) : (
                                 messages.map((msg, index) => (
                                     <Box key={index} sx={{
+                                        // This is the key change: conditionally align messages
                                         display: 'flex',
                                         justifyContent: msg.senderId === currentUser.id ? 'flex-end' : 'flex-start',
                                         mb: 1
@@ -210,8 +210,10 @@ const Dashboard = () => {
                                             sx={{
                                                 p: 1.5,
                                                 maxWidth: '70%',
+                                                // Conditionally change background color
                                                 backgroundColor: msg.senderId === currentUser.id ? '#e3f2fd' : '#f0f0f0',
                                                 borderRadius: '10px',
+                                                // Adjust border radius for a bubble effect
                                                 borderTopRightRadius: msg.senderId === currentUser.id ? 0 : '10px',
                                                 borderBottomRightRadius: msg.senderId === currentUser.id ? 0 : '10px',
                                                 borderTopLeftRadius: msg.senderId === currentUser.id ? '10px' : 0,
@@ -219,7 +221,10 @@ const Dashboard = () => {
                                             }}
                                         >
                                             <Typography variant="body2">
-                                                <strong>{msg.senderUsername}:</strong> {msg.text}
+                                                {/* Conditionally display sender's name */}
+                                                <strong>
+                                                    {msg.senderId === currentUser.id ? 'You' : msg.senderUsername}:
+                                                </strong> {msg.text}
                                             </Typography>
                                             <Typography variant="caption" color="textSecondary" sx={{ fontSize: '0.7rem', display: 'block', textAlign: msg.senderId === currentUser.id ? 'right' : 'left' }}>
                                                 {new Date(msg.createdAt).toLocaleTimeString()}
