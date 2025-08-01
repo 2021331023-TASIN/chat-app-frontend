@@ -60,6 +60,8 @@ const Dashboard = () => {
             newSocket.on('newMessage', (message) => {
                 console.log('Received new message:', message);
                 setMessages((prevMessages) => {
+                    // This is the crucial fix: prevent adding a duplicate message
+                    // received from the socket if we've already added it optimistically.
                     const isDuplicate = prevMessages.some(msg => msg._id === message._id);
                     if (!isDuplicate) {
                         return [...prevMessages, message];
@@ -258,7 +260,6 @@ const Dashboard = () => {
                                                 display: 'flex',
                                                 flexDirection: 'column',
                                                 position: 'relative',
-                                                // Change opacity for sending messages
                                                 opacity: msg.isSending ? 0.6 : 1
                                             }}
                                         >
