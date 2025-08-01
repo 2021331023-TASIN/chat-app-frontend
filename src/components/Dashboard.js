@@ -18,9 +18,6 @@ const Dashboard = () => {
     const [newMessage, setNewMessage] = useState('');
     const [socket, setSocket] = useState(null);
 
-    // ====================================================================
-    // 1. useEffect for Initial Setup and Socket Connection (Runs only once)
-    // ====================================================================
     useEffect(() => {
         const token = localStorage.getItem('token');
         const storedUser = localStorage.getItem('user');
@@ -37,18 +34,20 @@ const Dashboard = () => {
             const parsedUser = JSON.parse(storedUser);
             setCurrentUser(parsedUser);
 
-            newSocket = io(BACKEND_SOCKET_URL);
+            newSocket = io(BACKEND_SOCKET_URL, {
+                query: {
+                    userId: parsedUser.id,
+                },
+            });
             setSocket(newSocket);
 
             newSocket.on('connect', () => {
                 console.log('Socket.IO connected!');
-                newSocket.emit('userOnline', parsedUser.id);
             });
             
-            // This listener is now more robust to prevent duplicates
-            newSocket.on('receiveMessage', (message) => {
-                console.log('Received message:', message);
-                // The backend now sends the full message object, including senderId
+            // CORRECTED: Listening for 'newMessage' event from the backend
+            newSocket.on('newMessage', (message) => {
+                console.log('Received new message:', message);
                 setMessages((prevMessages) => [...prevMessages, message]);
             });
 
@@ -62,7 +61,7 @@ const Dashboard = () => {
 
             return () => {
                 console.log('Cleaning up Socket.IO connection...');
-                newSocket.off('receiveMessage');
+                newSocket.off('newMessage');
                 newSocket.disconnect();
             };
 
@@ -75,12 +74,8 @@ const Dashboard = () => {
         } finally {
             setLoading(false);
         }
-
     }, [navigate]);
 
-    // ==================================================================
-    // 2. useEffect to Fetch Users and Message History
-    // ==================================================================
     useEffect(() => {
         const fetchUsers = async () => {
             try {
@@ -96,8 +91,8 @@ const Dashboard = () => {
         const fetchMessages = async () => {
             if (!selectedUser || !currentUser) return;
             try {
-                const response = await axiosInstance.get(`/users/messages/${selectedUser._id}`);
-                // The fetched messages now have valid timestamps
+                // Correct API route for fetching messages
+                const response = await axiosInstance.get(`/messages/${selectedUser._id}`);
                 setMessages(response.data);
             } catch (error) {
                 console.error('Error fetching old messages:', error);
@@ -116,12 +111,8 @@ const Dashboard = () => {
 
     }, [selectedUser, currentUser]);
 
-    // ==================================================================
-    // 3. Updated Functions & JSX
-    // ==================================================================
     const handleLogout = () => {
         if (socket && currentUser) {
-            socket.emit('userOffline', currentUser.id);
             socket.disconnect();
         }
         localStorage.removeItem('token');
@@ -134,19 +125,25 @@ const Dashboard = () => {
         setSelectedUser(user);
     };
 
-    const handleSendMessage = () => {
-        if (newMessage.trim() && socket && currentUser && selectedUser) {
-            const messageData = {
-                senderId: currentUser.id,
-                receiverId: selectedUser._id,
-                text: newMessage.trim(),
-            };
-            socket.emit('sendMessage', messageData);
+    // CORRECTED: The message sending function now uses a POST request
+    const handleSendMessage = async () => {
+        if (newMessage.trim() && currentUser && selectedUser) {
+            try {
+                const messageData = {
+                    message: newMessage.trim(),
+                };
 
-            // Optimistically add message to local state
-            // The backend now sends the full message back, so this is no longer needed
-            // setMessages((prevMessages) => [...prevMessages, messageData]); 
-            setNewMessage('');
+                const response = await axiosInstance.post(`/messages/send/${selectedUser._id}`, messageData);
+
+                console.log('Message sent successfully:', response.data);
+                
+                // Add the new message to the state to update the UI instantly
+                setMessages((prevMessages) => [...prevMessages, response.data]);
+                setNewMessage('');
+            } catch (error) {
+                console.error('Error sending message:', error.response?.data?.message || 'Failed to send message.');
+                toast.error(error.response?.data?.message || 'Failed to send message.');
+            }
         } else if (!selectedUser) {
             toast.warn("Please select a user to chat with first!");
         }
@@ -228,8 +225,7 @@ const Dashboard = () => {
                                                 <strong>{msg.senderUsername}:</strong> {msg.text}
                                             </Typography>
                                             <Typography variant="caption" color="textSecondary" sx={{ fontSize: '0.7rem', display: 'block', textAlign: msg.senderId === currentUser.id ? 'right' : 'left' }}>
-                                                {/* This line will now work correctly */}
-                                                {new Date(msg.timestamp).toLocaleTimeString()}
+                                                {new Date(msg.createdAt).toLocaleTimeString()}
                                             </Typography>
                                         </Paper>
                                     </Box>
@@ -249,7 +245,7 @@ const Dashboard = () => {
                             variant="contained"
                             color="primary"
                             onClick={handleSendMessage}
-                            disabled={!socket || !newMessage.trim()}
+                            disabled={!newMessage.trim()}
                         >
                             Send Message
                         </Button>
