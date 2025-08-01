@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { Container, Typography, Button, Box, CircularProgress, Paper, List, ListItem, ListItemText, Divider, TextField } from '@mui/material';
-import { createTheme, ThemeProvider } from '@mui/material/styles'; // ✅ ADDED: ThemeProvider and createTheme
+import { Container, Typography, Button, Box, CircularProgress, Paper, List, ListItem, ListItemText, Divider, TextField, Avatar, ListItemAvatar } from '@mui/material';
+import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -21,7 +21,7 @@ const createTempMessage = (text, senderId, receiverId) => ({
     senderUsername: 'You',
 });
 
-// ✅ ADDED: WhatsApp inspired theme
+// WhatsApp inspired theme
 const whatsAppTheme = createTheme({
     palette: {
         primary: {
@@ -55,6 +55,19 @@ const whatsAppTheme = createTheme({
     },
 });
 
+const avatarsList = [
+    'https://i.ibb.co/3s3p72d/avatar1.png',
+    'https://i.ibb.co/S7q551x/avatar2.png',
+    'https://i.ibb.co/g7z6V2H/avatar3.png',
+    'https://i.ibb.co/f4g150b/avatar4.png',
+    'https://i.ibb.co/fM86T5L/avatar5.png',
+    'https://i.ibb.co/g7z6V2H/avatar3.png',
+    'https://i.ibb.co/gM87d4t/avatar6.png',
+    'https://i.ibb.co/6P6XwWq/avatar7.png',
+    'https://i.ibb.co/7j95Tf1/avatar8.png',
+    'https://i.ibb.co/5c8c2Hq/avatar9.png',
+];
+
 const Dashboard = () => {
     const navigate = useNavigate();
     const [currentUser, setCurrentUser] = useState(null);
@@ -65,6 +78,8 @@ const Dashboard = () => {
     const [newMessage, setNewMessage] = useState('');
     const [socket, setSocket] = useState(null);
     const messagesEndRef = useRef(null);
+    const [showAvatarPicker, setShowAvatarPicker] = useState(false);
+    const [selectedAvatar, setSelectedAvatar] = useState(null);
 
     useEffect(() => {
         const token = localStorage.getItem('token');
@@ -81,6 +96,7 @@ const Dashboard = () => {
         try {
             const parsedUser = JSON.parse(storedUser);
             setCurrentUser(parsedUser);
+            setSelectedAvatar(parsedUser.avatarUrl || null);
 
             newSocket = io(BACKEND_SOCKET_URL, {
                 query: {
@@ -229,6 +245,25 @@ const Dashboard = () => {
             toast.warn("Please select a user to chat with first!");
         }
     };
+    
+    // ✅ ADDED: Function to handle saving the avatar
+    const handleSaveAvatar = async () => {
+        if (!selectedAvatar) {
+            toast.warn('Please select an avatar first.');
+            return;
+        }
+        try {
+            await axiosInstance.put('/users/avatar', { avatarUrl: selectedAvatar });
+            const updatedUser = { ...currentUser, avatarUrl: selectedAvatar };
+            setCurrentUser(updatedUser);
+            localStorage.setItem('user', JSON.stringify(updatedUser));
+            toast.success('Avatar updated successfully!');
+            setShowAvatarPicker(false);
+        } catch (error) {
+            console.error('Error updating avatar:', error);
+            toast.error('Failed to update avatar.');
+        }
+    };
 
     if (loading || !currentUser) {
         return (
@@ -239,15 +274,14 @@ const Dashboard = () => {
         );
     }
 
-    // ✅ ADDED: Wrap the main component with the ThemeProvider
     return (
         <ThemeProvider theme={whatsAppTheme}>
             <Container maxWidth="lg" sx={{ mt: 8, display: 'flex', gap: 3, height: 'calc(100vh - 100px)', backgroundColor: 'background.default' }}>
                 <Paper sx={{ flex: 1, minWidth: 250, p: 3, overflowY: 'auto', backgroundColor: 'background.paper' }}>
                     <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
                         <Typography variant="h6">Users</Typography>
-                        <Button variant="outlined" size="small" onClick={handleLogout}>
-                            Logout
+                        <Button variant="contained" onClick={() => setShowAvatarPicker(true)} size="small" sx={{ color: '#fff' }}>
+                            Choose Avatar
                         </Button>
                     </Box>
                     <Divider />
@@ -265,23 +299,29 @@ const Dashboard = () => {
                                     selected={selectedUser && selectedUser._id === userItem._id}
                                     sx={{ borderBottom: '1px solid', borderColor: 'divider', '&.Mui-selected': { backgroundColor: 'action.selected' } }}
                                 >
+                                    {/* ✅ ADDED: Avatar in the user list */}
+                                    <ListItemAvatar>
+                                        <Avatar alt={userItem.username} src={userItem.avatarUrl} />
+                                    </ListItemAvatar>
                                     <ListItemText primary={userItem.username} secondary={userItem.email} />
                                 </ListItem>
                             ))
                         )}
                     </List>
+                    <Button variant="outlined" sx={{ mt: 2 }} fullWidth onClick={handleLogout}>
+                        Logout
+                    </Button>
                 </Paper>
 
                 <Paper sx={{ flex: 3, display: 'flex', flexDirection: 'column', p: 3, backgroundColor: 'background.paper' }}>
                     {selectedUser ? (
                         <>
-                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+                                {/* ✅ ADDED: Avatar in the chat header */}
+                                <Avatar alt={selectedUser.username} src={selectedUser.avatarUrl} />
                                 <Typography variant="h5" sx={{ color: 'primary.main', fontWeight: 'bold' }}>
                                     Chat with {selectedUser.username}
                                 </Typography>
-                                <Button variant="contained" onClick={handleLogout} sx={{ ml: 'auto' }}>
-                                    Logout
-                                </Button>
                             </Box>
                             <Divider sx={{ mb: 2 }} />
                             <Box 
@@ -308,7 +348,6 @@ const Dashboard = () => {
                                                     sx={{
                                                         p: 1.5,
                                                         maxWidth: '70%',
-                                                        // ✅ UPDATED: Conditional background colors for chat bubbles
                                                         backgroundColor: msg.senderId === currentUser.id ? 'primary.light' : 'background.paper',
                                                         borderRadius: '16px',
                                                         borderTopRightRadius: msg.senderId === currentUser.id ? 2 : '16px',
@@ -356,7 +395,6 @@ const Dashboard = () => {
                                 />
                                 <Button
                                     variant="contained"
-                                    // ✅ UPDATED: Use the secondary color for the button
                                     color="secondary"
                                     onClick={handleSendMessage}
                                     disabled={!newMessage.trim()}
@@ -375,6 +413,38 @@ const Dashboard = () => {
                         </Box>
                     )}
                 </Paper>
+                
+                {/* ✅ ADDED: The avatar picker UI */}
+                {showAvatarPicker && (
+                    <Box sx={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: 400, bgcolor: 'background.paper', boxShadow: 24, p: 4, borderRadius: 2, zIndex: 1000 }}>
+                        <Typography variant="h6" mb={2}>Choose your avatar</Typography>
+                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, maxHeight: 300, overflowY: 'auto' }}>
+                            {avatarsList.map((avatar, index) => (
+                                <Avatar
+                                    key={index}
+                                    src={avatar}
+                                    alt={`Avatar ${index + 1}`}
+                                    onClick={() => setSelectedAvatar(avatar)}
+                                    sx={{
+                                        width: 60,
+                                        height: 60,
+                                        cursor: 'pointer',
+                                        border: selectedAvatar === avatar ? '3px solid #25d366' : '1px solid #ccc',
+                                    }}
+                                />
+                            ))}
+                        </Box>
+                        <Box mt={2} display="flex" justifyContent="flex-end" gap={2}>
+                            <Button variant="outlined" onClick={() => setShowAvatarPicker(false)}>
+                                Cancel
+                            </Button>
+                            <Button variant="contained" onClick={handleSaveAvatar} disabled={!selectedAvatar}>
+                                Save
+                            </Button>
+                        </Box>
+                    </Box>
+                )}
+                {showAvatarPicker && <Box sx={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, bgcolor: 'rgba(0,0,0,0.5)', zIndex: 999 }} onClick={() => setShowAvatarPicker(false)} />}
             </Container>
         </ThemeProvider>
     );
