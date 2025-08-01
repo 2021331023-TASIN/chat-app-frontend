@@ -5,8 +5,20 @@ import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import axiosInstance from '../utils/AxiosInstance';
 import { io } from 'socket.io-client';
+import SendIcon from '@mui/icons-material/Send';
+import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 
 const BACKEND_SOCKET_URL = 'https://chat-app-backend-0d86.onrender.com';
+
+const createTempMessage = (text, senderId, receiverId) => ({
+    _id: `temp-${Date.now()}`, // Unique temporary ID
+    text,
+    senderId,
+    receiverId,
+    createdAt: new Date().toISOString(),
+    isSending: true,
+    senderUsername: 'You',
+});
 
 const Dashboard = () => {
     const navigate = useNavigate();
@@ -47,7 +59,13 @@ const Dashboard = () => {
             
             newSocket.on('newMessage', (message) => {
                 console.log('Received new message:', message);
-                setMessages((prevMessages) => [...prevMessages, message]);
+                setMessages((prevMessages) => {
+                    const isDuplicate = prevMessages.some(msg => msg._id === message._id);
+                    if (!isDuplicate) {
+                        return [...prevMessages, message];
+                    }
+                    return prevMessages;
+                });
             });
 
             newSocket.on('disconnect', () => {
@@ -125,20 +143,42 @@ const Dashboard = () => {
 
     const handleSendMessage = async () => {
         if (newMessage.trim() && currentUser && selectedUser) {
-            try {
-                const messageData = {
-                    text: newMessage.trim(),
-                };
+            // 1. Create a temporary message object for instant UI update
+            const tempMessage = createTempMessage(newMessage.trim(), currentUser.id, selectedUser._id);
+            
+            // 2. Immediately add the temporary message to the messages state
+            setMessages((prevMessages) => [...prevMessages, tempMessage]);
+            setNewMessage(''); // Clear the input field right away
 
+            try {
+                // 3. Send the actual POST request to the backend in the background
+                const messageData = {
+                    text: tempMessage.text,
+                };
                 const response = await axiosInstance.post(`/messages/send/${selectedUser._id}`, messageData);
 
                 console.log('Message sent successfully:', response.data);
-                
-                setMessages((prevMessages) => [...prevMessages, response.data]);
-                setNewMessage('');
+
+                // 4. Update the temporary message with the real data from the server
+                setMessages((prevMessages) =>
+                    prevMessages.map((msg) =>
+                        msg._id === tempMessage._id
+                            ? { ...response.data, isSending: false } // Replace with server data
+                            : msg
+                    )
+                );
             } catch (error) {
                 console.error('Error sending message:', error.response?.data?.message || 'Failed to send message.');
-                toast.error(error.response?.data?.message || 'Failed to send message.');
+                
+                // 5. If the request fails, mark the temporary message as an error
+                setMessages((prevMessages) =>
+                    prevMessages.map((msg) =>
+                        msg._id === tempMessage._id
+                            ? { ...msg, isSending: false, failed: true } // Mark as failed
+                            : msg
+                    )
+                );
+                toast.error('Failed to send message.');
             }
         } else if (!selectedUser) {
             toast.warn("Please select a user to chat with first!");
@@ -198,9 +238,8 @@ const Dashboard = () => {
                                     Start your conversation!
                                 </Typography>
                             ) : (
-                                messages.map((msg, index) => (
-                                    <Box key={index} sx={{
-                                        // This is the key change: conditionally align messages
+                                messages.map((msg) => (
+                                    <Box key={msg._id} sx={{
                                         display: 'flex',
                                         justifyContent: msg.senderId === currentUser.id ? 'flex-end' : 'flex-start',
                                         mb: 1
@@ -210,25 +249,35 @@ const Dashboard = () => {
                                             sx={{
                                                 p: 1.5,
                                                 maxWidth: '70%',
-                                                // Conditionally change background color
                                                 backgroundColor: msg.senderId === currentUser.id ? '#e3f2fd' : '#f0f0f0',
                                                 borderRadius: '10px',
-                                                // Adjust border radius for a bubble effect
                                                 borderTopRightRadius: msg.senderId === currentUser.id ? 0 : '10px',
                                                 borderBottomRightRadius: msg.senderId === currentUser.id ? 0 : '10px',
                                                 borderTopLeftRadius: msg.senderId === currentUser.id ? '10px' : 0,
                                                 borderBottomLeftRadius: msg.senderId === currentUser.id ? '10px' : 0,
+                                                display: 'flex',
+                                                flexDirection: 'column',
+                                                position: 'relative',
+                                                // Change opacity for sending messages
+                                                opacity: msg.isSending ? 0.6 : 1
                                             }}
                                         >
-                                            <Typography variant="body2">
-                                                {/* Conditionally display sender's name */}
+                                            <Typography variant="body2" sx={{ wordWrap: 'break-word' }}>
                                                 <strong>
                                                     {msg.senderId === currentUser.id ? 'You' : msg.senderUsername}:
                                                 </strong> {msg.text}
                                             </Typography>
-                                            <Typography variant="caption" color="textSecondary" sx={{ fontSize: '0.7rem', display: 'block', textAlign: msg.senderId === currentUser.id ? 'right' : 'left' }}>
-                                                {new Date(msg.createdAt).toLocaleTimeString()}
-                                            </Typography>
+                                            <Box display="flex" alignItems="center" justifyContent="space-between">
+                                                <Typography variant="caption" color="textSecondary" sx={{ fontSize: '0.7rem' }}>
+                                                    {new Date(msg.createdAt).toLocaleTimeString()}
+                                                </Typography>
+                                                {msg.isSending && (
+                                                    <CircularProgress size={12} sx={{ ml: 1, color: '#9e9e9e' }} />
+                                                )}
+                                                {msg.failed && (
+                                                    <ErrorOutlineIcon sx={{ color: 'red', ml: 1, fontSize: '0.8rem' }} />
+                                                )}
+                                            </Box>
                                         </Paper>
                                     </Box>
                                 ))
@@ -248,6 +297,7 @@ const Dashboard = () => {
                             color="primary"
                             onClick={handleSendMessage}
                             disabled={!newMessage.trim()}
+                            endIcon={<SendIcon />}
                         >
                             Send Message
                         </Button>
