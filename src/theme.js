@@ -1,22 +1,22 @@
 import { createTheme } from '@mui/material/styles';
 
-// Define a classic-modern theme with light and dark modes
+// Define a more modern theme with a vibrant color palette
 const lightTheme = createTheme({
   palette: {
     mode: 'light',
     primary: {
-      main: '#4e54c8', // A soft, classic blue
+      main: '#007bff', // A vibrant, modern blue
     },
     secondary: {
-      main: '#667eea', // A slightly lighter blue
+      main: '#6c757d', // A neutral gray for secondary actions
     },
     background: {
-      default: '#f4f7f6', // A very light gray for the overall background
+      default: '#f8f9fa', // A subtle off-white for the overall background
       paper: '#ffffff', // Pure white for cards and components
     },
     text: {
-      primary: '#333333', // A soft black for readability
-      secondary: '#666666',
+      primary: '#212529', // A dark gray for high readability
+      secondary: '#495057',
     },
   },
   typography: {
@@ -34,7 +34,7 @@ const lightTheme = createTheme({
       styleOverrides: {
         root: {
           borderRadius: 12,
-          boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+          boxShadow: '0 6px 16px rgba(0,0,0,0.1)',
         },
       },
     },
@@ -53,18 +53,18 @@ const darkTheme = createTheme({
   palette: {
     mode: 'dark',
     primary: {
-      main: '#bb86fc', // A vibrant purple for dark mode
+      main: '#007bff', // Keeping the primary blue consistent
     },
     secondary: {
-      main: '#03dac6', // A teal for contrast
+      main: '#6c757d', // A neutral gray for secondary actions
     },
     background: {
-      default: '#121212', // Very dark gray for the background
-      paper: '#1d1d1d', // Dark gray for cards and components
+      default: '#1b1c1d', // A deep charcoal gray for the background
+      paper: '#2c2d2e', // A slightly lighter dark gray for cards
     },
     text: {
-      primary: '#ffffff',
-      secondary: '#b3b3b3',
+      primary: '#e9ecef', // Light gray for readability
+      secondary: '#adb5bd',
     },
   },
   typography: {
@@ -82,7 +82,7 @@ const darkTheme = createTheme({
       styleOverrides: {
         root: {
           borderRadius: 12,
-          boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+          boxShadow: '0 6px 16px rgba(0,0,0,0.35)',
         },
       },
     },
