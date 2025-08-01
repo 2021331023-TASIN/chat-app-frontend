@@ -42,7 +42,8 @@ const Dashboard = () => {
 
             newSocket.on('connect', () => {
                 console.log('Socket.IO connected!');
-                newSocket.emit('userOnline', parsedUser._id);
+                // FIX: Use parsedUser.id
+                newSocket.emit('userOnline', parsedUser.id);
             });
             
             // This listener will be set up only once
@@ -50,7 +51,8 @@ const Dashboard = () => {
             newSocket.on('receiveMessage', (message) => {
                 console.log('Received message:', message);
                 // Only add message to state if it's from the other user
-                if (message.senderId !== parsedUser._id) {
+                // FIX: Use parsedUser.id
+                if (message.senderId !== parsedUser.id) {
                     setMessages((prevMessages) => [...prevMessages, message]);
                 }
             });
@@ -88,7 +90,8 @@ const Dashboard = () => {
         const fetchUsers = async () => {
             try {
                 const response = await axiosInstance.get('/users/all-users');
-                const otherUsers = response.data.filter(user => user._id !== currentUser._id);
+                // FIX: Use currentUser.id
+                const otherUsers = response.data.filter(user => user._id !== currentUser.id);
                 setUsers(otherUsers);
             } catch (error) {
                 console.error('Error fetching users:', error);
@@ -123,7 +126,8 @@ const Dashboard = () => {
     // ==================================================================
     const handleLogout = () => {
         if (socket && currentUser) {
-            socket.emit('userOffline', currentUser._id);
+            // FIX: Use currentUser.id
+            socket.emit('userOffline', currentUser.id);
             socket.disconnect();
         }
         localStorage.removeItem('token');
@@ -139,7 +143,8 @@ const Dashboard = () => {
     const handleSendMessage = () => {
         if (newMessage.trim() && socket && currentUser && selectedUser) {
             const messageData = {
-                senderId: currentUser._id,
+                // FIX: Use currentUser.id
+                senderId: currentUser.id,
                 receiverId: selectedUser._id,
                 text: newMessage.trim(),
                 timestamp: new Date().toISOString(),
@@ -210,8 +215,8 @@ const Dashboard = () => {
                                 messages.map((msg, index) => (
                                     <Box key={index} sx={{
                                         display: 'flex',
-                                        // FIX: Use currentUser._id for a correct comparison
-                                        justifyContent: msg.senderId === currentUser._id ? 'flex-end' : 'flex-start',
+                                        // FIX: Use currentUser.id for a correct comparison
+                                        justifyContent: msg.senderId === currentUser.id ? 'flex-end' : 'flex-start',
                                         mb: 1
                                     }}>
                                         <Paper
@@ -219,20 +224,20 @@ const Dashboard = () => {
                                             sx={{
                                                 p: 1.5,
                                                 maxWidth: '70%',
-                                                // FIX: Use currentUser._id for a correct comparison
-                                                backgroundColor: msg.senderId === currentUser._id ? '#e3f2fd' : '#f0f0f0',
+                                                // FIX: Use currentUser.id for a correct comparison
+                                                backgroundColor: msg.senderId === currentUser.id ? '#e3f2fd' : '#f0f0f0',
                                                 borderRadius: '10px',
-                                                // FIX: Use currentUser._id for a correct comparison
-                                                borderTopRightRadius: msg.senderId === currentUser._id ? 0 : '10px',
-                                                borderBottomRightRadius: msg.senderId === currentUser._id ? 0 : '10px',
-                                                borderTopLeftRadius: msg.senderId === currentUser._id ? '10px' : 0,
-                                                borderBottomLeftRadius: msg.senderId === currentUser._id ? '10px' : 0,
+                                                // FIX: Use currentUser.id for a correct comparison
+                                                borderTopRightRadius: msg.senderId === currentUser.id ? 0 : '10px',
+                                                borderBottomRightRadius: msg.senderId === currentUser.id ? 0 : '10px',
+                                                borderTopLeftRadius: msg.senderId === currentUser.id ? '10px' : 0,
+                                                borderBottomLeftRadius: msg.senderId === currentUser.id ? '10px' : 0,
                                             }}
                                         >
                                             <Typography variant="body2">
                                                 <strong>{msg.senderUsername}:</strong> {msg.text}
                                             </Typography>
-                                            <Typography variant="caption" color="textSecondary" sx={{ fontSize: '0.7rem', display: 'block', textAlign: msg.senderId === currentUser._id ? 'right' : 'left' }}>
+                                            <Typography variant="caption" color="textSecondary" sx={{ fontSize: '0.7rem', display: 'block', textAlign: msg.senderId === currentUser.id ? 'right' : 'left' }}>
                                                 {new Date(msg.timestamp).toLocaleTimeString()}
                                             </Typography>
                                         </Paper>
