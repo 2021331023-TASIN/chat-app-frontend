@@ -6,7 +6,6 @@ import 'react-toastify/dist/ReactToastify.css';
 import axiosInstance from '../utils/AxiosInstance';
 import { io } from 'socket.io-client';
 
-// The URL for your backend's Socket.IO server (without the /api)
 const BACKEND_SOCKET_URL = 'https://chat-app-backend-0d86.onrender.com';
 
 const Dashboard = () => {
@@ -38,10 +37,8 @@ const Dashboard = () => {
             const parsedUser = JSON.parse(storedUser);
             setCurrentUser(parsedUser);
 
-            // Initialize Socket.IO connection only once on component mount
             newSocket = io(BACKEND_SOCKET_URL);
             setSocket(newSocket);
-            console.log('Attempting to connect to Socket.IO...');
 
             newSocket.on('connect', () => {
                 console.log('Socket.IO connected!');
@@ -49,10 +46,13 @@ const Dashboard = () => {
             });
             
             // This listener will be set up only once
+            // FIX: Prevent adding a message if the sender is the current user
             newSocket.on('receiveMessage', (message) => {
                 console.log('Received message:', message);
-                // Update messages for the current chat
-                setMessages((prevMessages) => [...prevMessages, message]);
+                // Only add message to state if it's from the other user
+                if (message.senderId !== parsedUser._id) {
+                    setMessages((prevMessages) => [...prevMessages, message]);
+                }
             });
 
             newSocket.on('disconnect', () => {
@@ -63,7 +63,6 @@ const Dashboard = () => {
                 toast.error('Real-time connection failed.');
             });
 
-            // Cleanup function to disconnect the socket when the component unmounts
             return () => {
                 console.log('Cleaning up Socket.IO connection...');
                 newSocket.off('receiveMessage');
@@ -80,7 +79,7 @@ const Dashboard = () => {
             setLoading(false);
         }
 
-    }, [navigate]); // Empty dependency array ensures this runs only once
+    }, [navigate]);
 
     // ==================================================================
     // 2. useEffect to Fetch Users and Message History
@@ -89,7 +88,6 @@ const Dashboard = () => {
         const fetchUsers = async () => {
             try {
                 const response = await axiosInstance.get('/users/all-users');
-                // Filter out the current user from the list
                 const otherUsers = response.data.filter(user => user._id !== currentUser._id);
                 setUsers(otherUsers);
             } catch (error) {
@@ -121,7 +119,7 @@ const Dashboard = () => {
     }, [selectedUser, currentUser]);
 
     // ==================================================================
-    // 3. Updated Functions
+    // 3. Updated Functions & JSX
     // ==================================================================
     const handleLogout = () => {
         if (socket && currentUser) {
@@ -167,7 +165,6 @@ const Dashboard = () => {
 
     return (
         <Container maxWidth="lg" style={{ marginTop: '50px', display: 'flex', gap: '20px', height: 'calc(100vh - 100px)' }}>
-            {/* Left Sidebar for Users List */}
             <Paper elevation={3} style={{ flex: 1, minWidth: '250px', padding: '15px', overflowY: 'auto' }}>
                 <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
                     <Typography variant="h6">Users</Typography>
@@ -197,7 +194,6 @@ const Dashboard = () => {
                 </List>
             </Paper>
 
-            {/* Right Main Chat Area */}
             <Paper elevation={3} style={{ flex: 3, display: 'flex', flexDirection: 'column', padding: '15px' }}>
                 {selectedUser ? (
                     <>
@@ -214,6 +210,7 @@ const Dashboard = () => {
                                 messages.map((msg, index) => (
                                     <Box key={index} sx={{
                                         display: 'flex',
+                                        // FIX: Use currentUser._id for a correct comparison
                                         justifyContent: msg.senderId === currentUser._id ? 'flex-end' : 'flex-start',
                                         mb: 1
                                     }}>
@@ -222,8 +219,10 @@ const Dashboard = () => {
                                             sx={{
                                                 p: 1.5,
                                                 maxWidth: '70%',
+                                                // FIX: Use currentUser._id for a correct comparison
                                                 backgroundColor: msg.senderId === currentUser._id ? '#e3f2fd' : '#f0f0f0',
                                                 borderRadius: '10px',
+                                                // FIX: Use currentUser._id for a correct comparison
                                                 borderTopRightRadius: msg.senderId === currentUser._id ? 0 : '10px',
                                                 borderBottomRightRadius: msg.senderId === currentUser._id ? 0 : '10px',
                                                 borderTopLeftRadius: msg.senderId === currentUser._id ? '10px' : 0,
