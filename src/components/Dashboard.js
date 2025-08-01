@@ -1,4 +1,6 @@
-// This is the updated Dashboard component with all Vercel fixes.
+// =======================================================
+// === START OF CORRECTED DASHBOARD.JS FILE ===
+// =======================================================
 import React, { useEffect, useState } from 'react';
 import { Container, Typography, Button, Box, CircularProgress, Paper, List, ListItem, ListItemText, Divider, TextField } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
@@ -12,7 +14,7 @@ import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 const BACKEND_SOCKET_URL = 'https://chat-app-backend-0d86.onrender.com';
 
 const createTempMessage = (text, senderId, receiverId) => ({
-    _id: `temp-${Date.now()}`, // Unique temporary ID
+    _id: `temp-${Date.now()}`,
     text,
     senderId,
     receiverId,
@@ -61,12 +63,9 @@ const Dashboard = () => {
             newSocket.on('newMessage', (message) => {
                 console.log('Received new message:', message);
                 setMessages((prevMessages) => {
-                    // FIX: Ensure both IDs are strings for a reliable comparison.
-                    // If the senderId matches the current user's ID, ignore the message.
                     if (message.senderId?.toString() === parsedUser.id?.toString()) {
                         return prevMessages;
                     }
-                    // If it's a message from another user, add it to the state.
                     return [...prevMessages, message];
                 });
             });
@@ -316,3 +315,6 @@ const Dashboard = () => {
 };
 
 export default Dashboard;
+// =======================================================
+// === END OF CORRECTED DASHBOARD.JS FILE ===
+// =======================================================
