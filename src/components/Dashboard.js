@@ -1,6 +1,3 @@
-// =======================================================
-// === START OF CORRECTED DASHBOARD.JS FILE ===
-// =======================================================
 import React, { useEffect, useState } from 'react';
 import { Container, Typography, Button, Box, CircularProgress, Paper, List, ListItem, ListItemText, Divider, TextField } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
@@ -184,7 +181,7 @@ const Dashboard = () => {
 
     if (loading || !currentUser) {
         return (
-            <Container maxWidth="md" style={{ marginTop: '50px', textAlign: 'center' }}>
+            <Container maxWidth="md" sx={{ mt: 8, textAlign: 'center' }}>
                 <CircularProgress />
                 <Typography>Loading dashboard...</Typography>
             </Container>
@@ -192,8 +189,8 @@ const Dashboard = () => {
     }
 
     return (
-        <Container maxWidth="lg" style={{ marginTop: '50px', display: 'flex', gap: '20px', height: 'calc(100vh - 100px)' }}>
-            <Paper elevation={3} style={{ flex: 1, minWidth: '250px', padding: '15px', overflowY: 'auto' }}>
+        <Container maxWidth="lg" sx={{ mt: 8, display: 'flex', gap: 3, height: 'calc(100vh - 100px)' }}>
+            <Paper sx={{ flex: 1, minWidth: 250, p: 3, overflowY: 'auto' }}>
                 <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
                     <Typography variant="h6">Users</Typography>
                     <Button variant="outlined" size="small" onClick={handleLogout}>
@@ -203,7 +200,7 @@ const Dashboard = () => {
                 <Divider />
                 <List>
                     {users.length === 0 ? (
-                        <Typography variant="body2" color="textSecondary" sx={{ mt: 2, textAlign: 'center' }}>
+                        <Typography variant="body2" color="text.secondary" sx={{ mt: 2, textAlign: 'center' }}>
                             No other users found.
                         </Typography>
                     ) : (
@@ -213,7 +210,7 @@ const Dashboard = () => {
                                 key={userItem._id}
                                 onClick={() => handleSelectUser(userItem)}
                                 selected={selectedUser && selectedUser._id === userItem._id}
-                                sx={{ borderBottom: '1px solid #eee' }}
+                                sx={{ borderBottom: '1px solid', borderColor: 'divider', '&.Mui-selected': { backgroundColor: 'action.selected' } }}
                             >
                                 <ListItemText primary={userItem.username} secondary={userItem.email} />
                             </ListItem>
@@ -222,16 +219,16 @@ const Dashboard = () => {
                 </List>
             </Paper>
 
-            <Paper elevation={3} style={{ flex: 3, display: 'flex', flexDirection: 'column', padding: '15px' }}>
+            <Paper sx={{ flex: 3, display: 'flex', flexDirection: 'column', p: 3 }}>
                 {selectedUser ? (
                     <>
                         <Typography variant="h5" gutterBottom>
                             Chat with {selectedUser.username}
                         </Typography>
                         <Divider sx={{ mb: 2 }} />
-                        <Box sx={{ flexGrow: 1, overflowY: 'auto', p: 2, border: '1px solid #eee', borderRadius: '4px', mb: 2 }}>
+                        <Box sx={{ flexGrow: 1, overflowY: 'auto', p: 2, border: '1px solid', borderColor: 'divider', borderRadius: 2, mb: 2 }}>
                             {messages.length === 0 ? (
-                                <Typography color="textSecondary" textAlign="center">
+                                <Typography color="text.secondary" textAlign="center">
                                     Start your conversation!
                                 </Typography>
                             ) : (
@@ -250,32 +247,32 @@ const Dashboard = () => {
                                                 sx={{
                                                     p: 1.5,
                                                     maxWidth: '70%',
-                                                    backgroundColor: msg.senderId === currentUser.id ? '#e3f2fd' : '#f0f0f0',
-                                                    borderRadius: '10px',
-                                                    borderTopRightRadius: msg.senderId === currentUser.id ? 0 : '10px',
-                                                    borderBottomRightRadius: msg.senderId === currentUser.id ? 0 : '10px',
-                                                    borderTopLeftRadius: msg.senderId === currentUser.id ? '10px' : 0,
-                                                    borderBottomLeftRadius: msg.senderId === currentUser.id ? '10px' : 0,
+                                                    backgroundColor: msg.senderId === currentUser.id ? 'primary.light' : 'background.default',
+                                                    borderRadius: '16px',
+                                                    borderTopRightRadius: msg.senderId === currentUser.id ? 2 : '16px',
+                                                    borderBottomRightRadius: msg.senderId === currentUser.id ? 2 : '16px',
+                                                    borderTopLeftRadius: msg.senderId === currentUser.id ? '16px' : 2,
+                                                    borderBottomLeftRadius: msg.senderId === currentUser.id ? '16px' : 2,
                                                     display: 'flex',
                                                     flexDirection: 'column',
                                                     position: 'relative',
-                                                    opacity: msg.isSending ? 0.6 : 1
+                                                    opacity: msg.isSending ? 0.6 : 1,
                                                 }}
                                             >
-                                                <Typography variant="body2" sx={{ wordWrap: 'break-word' }}>
+                                                <Typography variant="body2" sx={{ wordWrap: 'break-word', color: 'text.primary' }}>
                                                     <strong>
                                                         {msg.senderId === currentUser.id ? 'You' : msg.senderUsername}:
                                                     </strong> {msg.text}
                                                 </Typography>
-                                                <Box display="flex" alignItems="center" justifyContent="space-between">
-                                                    <Typography variant="caption" color="textSecondary" sx={{ fontSize: '0.7rem' }}>
+                                                <Box display="flex" alignItems="center" justifyContent="space-between" mt={0.5}>
+                                                    <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.7rem' }}>
                                                         {isValidDate ? createdAtDate.toLocaleTimeString() : 'Invalid Date'}
                                                     </Typography>
                                                     {msg.isSending && (
-                                                        <CircularProgress size={12} sx={{ ml: 1, color: '#9e9e9e' }} />
+                                                        <CircularProgress size={12} sx={{ ml: 1, color: 'text.secondary' }} />
                                                     )}
                                                     {msg.failed && (
-                                                        <ErrorOutlineIcon sx={{ color: 'red', ml: 1, fontSize: '0.8rem' }} />
+                                                        <ErrorOutlineIcon sx={{ color: 'error.main', ml: 1, fontSize: '0.8rem' }} />
                                                     )}
                                                 </Box>
                                             </Paper>
@@ -283,28 +280,32 @@ const Dashboard = () => {
                                     );
                                 }))}
                         </Box>
-                        <TextField
-                            fullWidth
-                            variant="outlined"
-                            placeholder="Type your message..."
-                            value={newMessage}
-                            onChange={(e) => setNewMessage(e.target.value)}
-                            onKeyPress={(e) => { if (e.key === 'Enter') handleSendMessage(); }}
-                            sx={{ mb: 1 }}
-                        />
-                        <Button
-                            variant="contained"
-                            color="primary"
-                            onClick={handleSendMessage}
-                            disabled={!newMessage.trim()}
-                            endIcon={<SendIcon />}
-                        >
-                            Send Message
-                        </Button>
+                        <Box sx={{ display: 'flex', gap: 1 }}>
+                            <TextField
+                                fullWidth
+                                variant="outlined"
+                                placeholder="Type your message..."
+                                value={newMessage}
+                                onChange={(e) => setNewMessage(e.target.value)}
+                                onKeyPress={(e) => { if (e.key === 'Enter') handleSendMessage(); }}
+                                size="small"
+                                sx={{ backgroundColor: 'background.default' }}
+                            />
+                            <Button
+                                variant="contained"
+                                color="primary"
+                                onClick={handleSendMessage}
+                                disabled={!newMessage.trim()}
+                                endIcon={<SendIcon />}
+                                sx={{ borderRadius: '8px' }}
+                            >
+                                Send
+                            </Button>
+                        </Box>
                     </>
                 ) : (
                     <Box sx={{ flexGrow: 1, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                        <Typography variant="h6" color="textSecondary">
+                        <Typography variant="h6" color="text.secondary">
                             Select a user from the left to start chatting!
                         </Typography>
                     </Box>
@@ -315,6 +316,3 @@ const Dashboard = () => {
 };
 
 export default Dashboard;
-// =======================================================
-// === END OF CORRECTED DASHBOARD.JS FILE ===
-// =======================================================
