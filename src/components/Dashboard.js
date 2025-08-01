@@ -1,3 +1,4 @@
+// This is the updated Dashboard component with all Vercel fixes.
 import React, { useEffect, useState } from 'react';
 import { Container, Typography, Button, Box, CircularProgress, Paper, List, ListItem, ListItemText, Divider, TextField } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
