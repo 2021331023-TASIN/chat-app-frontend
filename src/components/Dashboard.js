@@ -3,19 +3,25 @@ import { Container, Typography, Button, Box, CircularProgress, Paper, List, List
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import axios from '../utils/AxiosInstance'; // Your Axios instance
-import { io } from 'socket.io-client'; // Import socket.io-client
+import axiosInstance from '../utils/AxiosInstance';
+import { io } from 'socket.io-client';
+
+// The URL for your backend's Socket.IO server (without the /api)
+const BACKEND_SOCKET_URL = 'https://chat-app-backend-0d86.onrender.com';
 
 const Dashboard = () => {
     const navigate = useNavigate();
     const [currentUser, setCurrentUser] = useState(null);
     const [loading, setLoading] = useState(true);
-    const [users, setUsers] = useState([]); // State to store other users
-    const [selectedUser, setSelectedUser] = useState(null); // User currently chatting with
-    const [messages, setMessages] = useState([]); // Messages for the current chat
-    const [newMessage, setNewMessage] = useState(''); // Input for new message
-    const [socket, setSocket] = useState(null); // Socket.IO instance
+    const [users, setUsers] = useState([]);
+    const [selectedUser, setSelectedUser] = useState(null);
+    const [messages, setMessages] = useState([]);
+    const [newMessage, setNewMessage] = useState('');
+    const [socket, setSocket] = useState(null);
 
+    // ====================================================================
+    // 1. useEffect for Initial Setup and Socket Connection (Runs only once)
+    // ====================================================================
     useEffect(() => {
         const token = localStorage.getItem('token');
         const storedUser = localStorage.getItem('user');
@@ -27,75 +33,100 @@ const Dashboard = () => {
             return;
         }
 
+        let newSocket;
         try {
             const parsedUser = JSON.parse(storedUser);
             setCurrentUser(parsedUser);
 
-            // Initialize Socket.IO connection
-            const newSocket = io('https://chat-app-backend-0d86.onrender.com'); // Connect to your backend socket.io server
+            // Initialize Socket.IO connection only once on component mount
+            newSocket = io(BACKEND_SOCKET_URL);
             setSocket(newSocket);
+            console.log('Attempting to connect to Socket.IO...');
 
             newSocket.on('connect', () => {
                 console.log('Socket.IO connected!');
-                // Emit 'userOnline' event when connected, sending the current user's ID
-                newSocket.emit('userOnline', parsedUser.id);
+                newSocket.emit('userOnline', parsedUser._id);
             });
-
-            // Listen for incoming messages
+            
+            // This listener will be set up only once
             newSocket.on('receiveMessage', (message) => {
                 console.log('Received message:', message);
-                // Add message to state only if it belongs to the currently selected chat
-                // (either sent by current user to selected user, or by selected user to current user)
-                if (selectedUser && (
-                    (message.senderId === selectedUser._id && message.receiverId === parsedUser.id) ||
-                    (message.senderId === parsedUser.id && message.receiverId === selectedUser._id)
-                )) {
-                    setMessages((prevMessages) => [...prevMessages, message]);
-                }
+                // Update messages for the current chat
+                setMessages((prevMessages) => [...prevMessages, message]);
             });
 
             newSocket.on('disconnect', () => {
                 console.log('Socket.IO disconnected!');
             });
-
             newSocket.on('connect_error', (err) => {
                 console.error('Socket.IO connection error:', err.message);
-                toast.error('Real-time connection failed. Please try again.');
+                toast.error('Real-time connection failed.');
             });
 
-            // Fetch all other users
-            const fetchUsers = async () => {
-                try {
-                    const response = await axios.get('/users/all-users');
-                    setUsers(response.data);
-                } catch (error) {
-                    console.error('Error fetching users:', error);
-                    toast.error(error.response?.data?.message || 'Failed to fetch users.');
-                }
-            };
-            fetchUsers();
-
-            // Cleanup function for Socket.IO
+            // Cleanup function to disconnect the socket when the component unmounts
             return () => {
-                if (newSocket) {
-                    newSocket.disconnect();
-                }
+                console.log('Cleaning up Socket.IO connection...');
+                newSocket.off('receiveMessage');
+                newSocket.disconnect();
             };
 
         } catch (e) {
             console.error("Failed to parse user from localStorage or connect socket", e);
             localStorage.removeItem('token');
             localStorage.removeItem('user');
-            toast.error('User data corrupted or connection error. Please log in again.');
+            toast.error('User data corrupted. Please log in again.');
             navigate('/login');
         } finally {
             setLoading(false);
         }
-    }, [navigate, selectedUser]); // Rerun effect when selectedUser changes to update message filtering
 
+    }, [navigate]); // Empty dependency array ensures this runs only once
+
+    // ==================================================================
+    // 2. useEffect to Fetch Users and Message History
+    // ==================================================================
+    useEffect(() => {
+        const fetchUsers = async () => {
+            try {
+                const response = await axiosInstance.get('/users/all-users');
+                // Filter out the current user from the list
+                const otherUsers = response.data.filter(user => user._id !== currentUser._id);
+                setUsers(otherUsers);
+            } catch (error) {
+                console.error('Error fetching users:', error);
+                toast.error(error.response?.data?.message || 'Failed to fetch users.');
+            }
+        };
+
+        const fetchMessages = async () => {
+            if (!selectedUser || !currentUser) return;
+            try {
+                const response = await axiosInstance.get(`/users/messages/${selectedUser._id}`);
+                setMessages(response.data);
+            } catch (error) {
+                console.error('Error fetching old messages:', error);
+                toast.error(error.response?.data?.message || 'Failed to fetch message history.');
+                setMessages([]);
+            }
+        };
+        
+        if (currentUser) {
+            fetchUsers();
+        }
+
+        if (selectedUser && currentUser) {
+            fetchMessages();
+        }
+
+    }, [selectedUser, currentUser]);
+
+    // ==================================================================
+    // 3. Updated Functions
+    // ==================================================================
     const handleLogout = () => {
-        if (socket) {
-            socket.disconnect(); // Disconnect socket on logout
+        if (socket && currentUser) {
+            socket.emit('userOffline', currentUser._id);
+            socket.disconnect();
         }
         localStorage.removeItem('token');
         localStorage.removeItem('user');
@@ -105,25 +136,21 @@ const Dashboard = () => {
 
     const handleSelectUser = (user) => {
         setSelectedUser(user);
-        setMessages([]); // Clear messages for new chat
-        // In a real application, you'd fetch message history for this chat here
     };
 
     const handleSendMessage = () => {
         if (newMessage.trim() && socket && currentUser && selectedUser) {
             const messageData = {
-                senderId: currentUser.id,
-                senderUsername: currentUser.username, // Using username from current user state
-                receiverId: selectedUser._id, // Ensure this matches backend user ID type
-                receiverUsername: selectedUser.username, // Using username from selected user state
+                senderId: currentUser._id,
+                receiverId: selectedUser._id,
                 text: newMessage.trim(),
-                timestamp: new Date().toISOString(), // ISO string for consistent time
+                timestamp: new Date().toISOString(),
             };
-            socket.emit('sendMessage', messageData); // Emit message to server
+            socket.emit('sendMessage', messageData);
 
             // Optimistically add message to local state
             setMessages((prevMessages) => [...prevMessages, messageData]);
-            setNewMessage(''); // Clear input field
+            setNewMessage('');
         } else if (!selectedUser) {
             toast.warn("Please select a user to chat with first!");
         }
@@ -164,7 +191,6 @@ const Dashboard = () => {
                                 sx={{ borderBottom: '1px solid #eee' }}
                             >
                                 <ListItemText primary={userItem.username} secondary={userItem.email} />
-                                {/* You could add an online indicator here based on real-time socket data */}
                             </ListItem>
                         ))
                     )}
@@ -188,7 +214,7 @@ const Dashboard = () => {
                                 messages.map((msg, index) => (
                                     <Box key={index} sx={{
                                         display: 'flex',
-                                        justifyContent: msg.senderId === currentUser.id ? 'flex-end' : 'flex-start',
+                                        justifyContent: msg.senderId === currentUser._id ? 'flex-end' : 'flex-start',
                                         mb: 1
                                     }}>
                                         <Paper
@@ -196,19 +222,18 @@ const Dashboard = () => {
                                             sx={{
                                                 p: 1.5,
                                                 maxWidth: '70%',
-                                                backgroundColor: msg.senderId === currentUser.id ? '#e3f2fd' : '#f0f0f0',
+                                                backgroundColor: msg.senderId === currentUser._id ? '#e3f2fd' : '#f0f0f0',
                                                 borderRadius: '10px',
-                                                // Adjust corner radius for a speech bubble effect
-                                                borderTopRightRadius: msg.senderId === currentUser.id ? 0 : '10px',
-                                                borderBottomRightRadius: msg.senderId === currentUser.id ? 0 : '10px',
-                                                borderTopLeftRadius: msg.senderId === currentUser.id ? '10px' : 0,
-                                                borderBottomLeftRadius: msg.senderId === currentUser.id ? '10px' : 0,
+                                                borderTopRightRadius: msg.senderId === currentUser._id ? 0 : '10px',
+                                                borderBottomRightRadius: msg.senderId === currentUser._id ? 0 : '10px',
+                                                borderTopLeftRadius: msg.senderId === currentUser._id ? '10px' : 0,
+                                                borderBottomLeftRadius: msg.senderId === currentUser._id ? '10px' : 0,
                                             }}
                                         >
                                             <Typography variant="body2">
                                                 <strong>{msg.senderUsername}:</strong> {msg.text}
                                             </Typography>
-                                            <Typography variant="caption" color="textSecondary" sx={{ fontSize: '0.7rem', display: 'block', textAlign: msg.senderId === currentUser.id ? 'right' : 'left' }}>
+                                            <Typography variant="caption" color="textSecondary" sx={{ fontSize: '0.7rem', display: 'block', textAlign: msg.senderId === currentUser._id ? 'right' : 'left' }}>
                                                 {new Date(msg.timestamp).toLocaleTimeString()}
                                             </Typography>
                                         </Paper>
