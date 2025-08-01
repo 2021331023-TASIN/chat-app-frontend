@@ -60,13 +60,13 @@ const Dashboard = () => {
             newSocket.on('newMessage', (message) => {
                 console.log('Received new message:', message);
                 setMessages((prevMessages) => {
-                    // This is the crucial fix: prevent adding a duplicate message
-                    // received from the socket if we've already added it optimistically.
-                    const isDuplicate = prevMessages.some(msg => msg._id === message._id);
-                    if (!isDuplicate) {
-                        return [...prevMessages, message];
+                    // Fix: Check if the message is from the current user
+                    // If it is, the handleSendMessage function has already updated the UI.
+                    // We only want to add messages from other users via the socket.
+                    if (message.senderId === parsedUser.id) {
+                        return prevMessages;
                     }
-                    return prevMessages;
+                    return [...prevMessages, message];
                 });
             });
 
