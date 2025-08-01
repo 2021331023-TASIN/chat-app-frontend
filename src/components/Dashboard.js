@@ -278,7 +278,7 @@ const Dashboard = () => {
                                             </Paper>
                                         </Box>
                                     );
-                                }))}
+                                })}
                         </Box>
                         <Box sx={{ display: 'flex', gap: 1 }}>
                             <TextField
