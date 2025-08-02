@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { Container, Typography, Button, Box, CircularProgress, Paper, List, ListItem, ListItemText, Divider, TextField, Avatar, ListItemAvatar, IconButton, Badge } from '@mui/material'; // ✅ UPDATED: Added Badge to the imports
+import { Container, Typography, Button, Box, CircularProgress, Paper, List, ListItem, ListItemText, Divider, TextField, Avatar, ListItemAvatar, IconButton, Badge } from '@mui/material';
 import { createTheme, ThemeProvider, useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useNavigate } from 'react-router-dom';
@@ -82,7 +82,6 @@ const Dashboard = () => {
     const messagesEndRef = useRef(null);
     const [showAvatarPicker, setShowAvatarPicker] = useState(false);
     const [selectedAvatar, setSelectedAvatar] = useState(null);
-    // ✅ ADDED: State to hold the list of online user IDs
     const [onlineUsers, setOnlineUsers] = useState([]);
     
     const theme = useTheme();
@@ -127,7 +126,6 @@ const Dashboard = () => {
                 });
             });
 
-            // ✅ ADDED: Listen for the online users list from the backend
             newSocket.on('getOnlineUsers', (users) => {
                 console.log('Online users:', users);
                 setOnlineUsers(users);
@@ -144,7 +142,6 @@ const Dashboard = () => {
             return () => {
                 console.log('Cleaning up Socket.IO connection...');
                 newSocket.off('newMessage');
-                // ✅ ADDED: Clean up the getOnlineUsers listener
                 newSocket.off('getOnlineUsers');
                 newSocket.disconnect();
             };
@@ -323,7 +320,6 @@ const Dashboard = () => {
                             sx={{ borderBottom: '1px solid', borderColor: 'divider', '&.Mui-selected': { backgroundColor: 'action.selected' } }}
                         >
                             <ListItemAvatar>
-                                {/* ✅ UPDATED: Add a Badge to show online/offline status */}
                                 <Badge
                                     overlap="circular"
                                     anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
@@ -351,7 +347,6 @@ const Dashboard = () => {
                                 <ArrowBackIcon />
                             </IconButton>
                         )}
-                        {/* ✅ UPDATED: Add Badge to the chat header avatar as well */}
                         <Badge
                             overlap="circular"
                             anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
