@@ -291,9 +291,23 @@ const Dashboard = () => {
         <Paper sx={{ flex: 1, minWidth: isDesktop ? 250 : '100%', p: 3, overflowY: 'auto', backgroundColor: 'background.paper' }}>
             <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
                 <Typography variant="h6">Users</Typography>
-                <Button variant="contained" onClick={() => setShowAvatarPicker(true)} size="small" sx={{ color: '#fff' }}>
-                    Choose Avatar
-                </Button>
+                <Box display="flex" gap={1}>
+                    <Button variant="contained" onClick={() => setShowAvatarPicker(true)} size="small" sx={{ color: '#fff' }}>
+                        Choose Avatar
+                    </Button>
+                    <Button
+                        variant="contained"
+                        onClick={handleLogout}
+                        size="small"
+                        sx={{
+                            color: '#fff',
+                            padding: '10px 20px',
+                            fontSize: '1rem',
+                        }}
+                    >
+                        Logout
+                    </Button>
+                </Box>
             </Box>
             <Divider />
             <List>
@@ -335,18 +349,6 @@ const Dashboard = () => {
                         <Typography variant="h5" sx={{ color: 'primary.main', fontWeight: 'bold', flexGrow: 1 }}>
                             Chat with {selectedUser.username}
                         </Typography>
-                        {/* ✅ UPDATED: The Logout button with increased size */}
-                        <Button
-                            variant="contained"
-                            onClick={handleLogout}
-                            sx={{
-                                color: '#fff',
-                                padding: '10px 20px',
-                                fontSize: '1rem',
-                            }}
-                        >
-                            Logout
-                        </Button>
                     </Box>
                     <Divider sx={{ mb: 2 }} />
                     <Box 
