@@ -87,6 +87,40 @@ const Dashboard = () => {
     const theme = useTheme();
     const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
     const [showUsersList, setShowUsersList] = useState(true);
+    
+    const playNotificationSound = () => {
+        try {
+            const audio = new Audio('https://assets.mixkit.co/sfx/download/mixkit-positive-notification-box-2023.wav');
+            audio.play().catch(e => console.error("Failed to play sound:", e));
+        } catch (e) {
+            console.error("Audio playback error:", e);
+        }
+    };
+    
+    const showDesktopNotification = (senderName, messageText, senderAvatar) => {
+        if (Notification.permission === "granted") {
+            new Notification(`New message from ${senderName}`, {
+                body: messageText,
+                icon: senderAvatar || 'https://i.ibb.co/6P6XwWq/avatar7.png',
+                silent: true, // Play custom sound instead of default notification sound
+            });
+        }
+    };
+    
+    useEffect(() => {
+        // Request notification permission on component mount
+        if ("Notification" in window) {
+            if (Notification.permission === "default") {
+                Notification.requestPermission().then(permission => {
+                    if (permission === "granted") {
+                        toast.success("Notifications enabled!");
+                    } else {
+                        toast.info("You can enable notifications in your browser settings.");
+                    }
+                });
+            }
+        }
+    }, []);
 
     useEffect(() => {
         const token = localStorage.getItem('token');
@@ -118,6 +152,20 @@ const Dashboard = () => {
             
             newSocket.on('newMessage', (message) => {
                 console.log('Received new message:', message);
+                
+                // Play sound and show notification if not the current user
+                if (message.senderId?.toString() !== parsedUser.id?.toString()) {
+                    playNotificationSound();
+                    
+                    // Show notification only if the sender is not the currently selected user
+                    if (!selectedUser || message.senderId?.toString() !== selectedUser._id?.toString()) {
+                        const sender = users.find(u => u._id === message.senderId);
+                        if (sender) {
+                            showDesktopNotification(sender.username, message.text, sender.avatarUrl);
+                        }
+                    }
+                }
+                
                 setMessages((prevMessages) => {
                     if (message.senderId?.toString() === parsedUser.id?.toString()) {
                         return prevMessages;
@@ -155,7 +203,7 @@ const Dashboard = () => {
         } finally {
             setLoading(false);
         }
-    }, [navigate]);
+    }, [navigate, selectedUser, users]);
 
     useEffect(() => {
         const fetchUsers = async () => {
