@@ -84,20 +84,20 @@ const Dashboard = () => {
     const [showAvatarPicker, setShowAvatarPicker] = useState(false);
     const [selectedAvatar, setSelectedAvatar] = useState(null);
     const [onlineUsers, setOnlineUsers] = useState([]);
+    const [audioContextUnlocked, setAudioContextUnlocked] = useState(false);
     
     const theme = useTheme();
     const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
     const [showUsersList, setShowUsersList] = useState(true);
     
     const playNotificationSound = () => {
+        if (!audioContextUnlocked) {
+            console.warn("Audio context is not yet unlocked. Skipping sound.");
+            return;
+        }
         try {
-            // Attempt to play the audio. The promise will resolve if successful, or reject if blocked.
             notificationSound.play().catch(e => {
                 console.error("Audio playback failed:", e.message);
-                if (e.name === 'NotAllowedError') {
-                    console.warn("Autoplay was prevented. A user interaction is required to enable audio.");
-                    toast.info("Click anywhere on the page to enable chat sounds.");
-                }
             });
         } catch (e) {
             console.error("An unexpected error occurred during audio playback:", e);
@@ -127,6 +127,34 @@ const Dashboard = () => {
             }
         }
     }, []);
+
+    // New useEffect to handle audio context unlock on user interaction
+    useEffect(() => {
+        const unlockAudio = () => {
+            if (!audioContextUnlocked) {
+                // Play a tiny, silent sound to unlock the audio context
+                notificationSound.muted = true;
+                notificationSound.play().then(() => {
+                    notificationSound.pause();
+                    notificationSound.muted = false;
+                    setAudioContextUnlocked(true);
+                    toast.success("Chat sounds enabled!");
+                }).catch(e => {
+                    console.error("Failed to unlock audio context:", e);
+                });
+            }
+        };
+
+        document.addEventListener('click', unlockAudio, { once: true });
+        document.addEventListener('mousedown', unlockAudio, { once: true });
+
+        // Cleanup
+        return () => {
+            document.removeEventListener('click', unlockAudio);
+            document.removeEventListener('mousedown', unlockAudio);
+        };
+    }, [audioContextUnlocked]);
+
 
     useEffect(() => {
         const token = localStorage.getItem('token');
@@ -207,7 +235,7 @@ const Dashboard = () => {
         } finally {
             setLoading(false);
         }
-    }, [navigate, selectedUser, users]);
+    }, [navigate, selectedUser, users, audioContextUnlocked]);
 
     useEffect(() => {
         const fetchUsers = async () => {
@@ -563,7 +591,7 @@ const Dashboard = () => {
                             <Box mt={2} display="flex" justifyContent="flex-end" gap={2}>
                                 <Button variant="outlined" onClick={() => setShowAvatarPicker(false)}>
                                     Cancel
-</Button>
+                                </Button>
                                 <Button variant="contained" onClick={handleSaveAvatar} disabled={!selectedAvatar}>
                                     Save
                                 </Button>
