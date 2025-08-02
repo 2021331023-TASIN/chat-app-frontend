@@ -290,24 +290,13 @@ const Dashboard = () => {
     const renderUsersList = (
         <Paper sx={{ flex: 1, minWidth: isDesktop ? 250 : '100%', p: 3, overflowY: 'auto', backgroundColor: 'background.paper' }}>
             <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-                <Typography variant="h6">Users</Typography>
-                <Box display="flex" gap={1}>
-                    <Button variant="contained" onClick={() => setShowAvatarPicker(true)} size="small" sx={{ color: '#fff' }}>
-                        Choose Avatar
-                    </Button>
-                    <Button
-                        variant="contained"
-                        onClick={handleLogout}
-                        size="small"
-                        sx={{
-                            color: '#fff',
-                            padding: '10px 20px',
-                            fontSize: '1rem',
-                        }}
-                    >
-                        Logout
-                    </Button>
-                </Box>
+                {/* ✅ UPDATED: The Users text now has a more prominent, "classic" style */}
+                <Typography variant="h6" sx={{ fontSize: '1.25rem', fontWeight: 'bold', color: 'primary.main' }}>
+                    Users
+                </Typography>
+                <Button variant="contained" onClick={() => setShowAvatarPicker(true)} size="small" sx={{ color: '#fff' }}>
+                    Choose Avatar
+                </Button>
             </Box>
             <Divider />
             <List>
@@ -444,57 +433,75 @@ const Dashboard = () => {
 
     return (
         <ThemeProvider theme={whatsAppTheme}>
-            <Container maxWidth="lg" sx={{ mt: 8, display: 'flex', gap: isDesktop ? 3 : 0, height: 'calc(100vh - 100px)', backgroundColor: 'background.default' }}>
-                {isDesktop ? (
-                    <>
-                        {renderUsersList}
-                        {renderChatWindow}
-                    </>
-                ) : (
-                    <>
-                        {showUsersList && renderUsersList}
-                        {!showUsersList && selectedUser && renderChatWindow}
-                        {!showUsersList && !selectedUser && (
-                           <Box sx={{ flexGrow: 1, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                             <Typography variant="h6" color="text.secondary">
-                               Select a user from the list to chat!
-                             </Typography>
-                           </Box>
-                        )}
-                    </>
-                )}
-                
-                {showAvatarPicker && (
-                    <Box sx={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: 400, bgcolor: 'background.paper', boxShadow: 24, p: 4, borderRadius: 2, zIndex: 1000 }}>
-                        <Typography variant="h6" mb={2}>Choose your avatar</Typography>
-                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, maxHeight: 300, overflowY: 'auto' }}>
-                            {avatarsList.map((avatar, index) => (
-                                <Avatar
-                                    key={index}
-                                    src={avatar}
-                                    alt={`Avatar ${index + 1}`}
-                                    onClick={() => setSelectedAvatar(avatar)}
-                                    sx={{
-                                        width: 60,
-                                        height: 60,
-                                        cursor: 'pointer',
-                                        border: selectedAvatar === avatar ? '3px solid #25d366' : '1px solid #ccc',
-                                    }}
-                                />
-                            ))}
+            <Box sx={{ position: 'relative', p: 2, backgroundColor: 'background.default', height: '100vh' }}>
+                {/* ✅ UPDATED: The new top-right header for the Logout button */}
+                <Box sx={{ position: 'absolute', top: 16, right: 16, zIndex: 10 }}>
+                    <Button
+                        variant="contained"
+                        onClick={handleLogout}
+                        size="small"
+                        sx={{
+                            color: '#fff',
+                            padding: '10px 20px',
+                            fontSize: '1rem',
+                        }}
+                    >
+                        Logout
+                    </Button>
+                </Box>
+
+                <Container maxWidth="lg" sx={{ mt: 8, display: 'flex', gap: isDesktop ? 3 : 0, height: 'calc(100vh - 100px)', backgroundColor: 'background.default' }}>
+                    {isDesktop ? (
+                        <>
+                            {renderUsersList}
+                            {renderChatWindow}
+                        </>
+                    ) : (
+                        <>
+                            {showUsersList && renderUsersList}
+                            {!showUsersList && selectedUser && renderChatWindow}
+                            {!showUsersList && !selectedUser && (
+                               <Box sx={{ flexGrow: 1, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                                 <Typography variant="h6" color="text.secondary">
+                                   Select a user from the list to chat!
+                                 </Typography>
+                               </Box>
+                            )}
+                        </>
+                    )}
+                    
+                    {showAvatarPicker && (
+                        <Box sx={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: 400, bgcolor: 'background.paper', boxShadow: 24, p: 4, borderRadius: 2, zIndex: 1000 }}>
+                            <Typography variant="h6" mb={2}>Choose your avatar</Typography>
+                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, maxHeight: 300, overflowY: 'auto' }}>
+                                {avatarsList.map((avatar, index) => (
+                                    <Avatar
+                                        key={index}
+                                        src={avatar}
+                                        alt={`Avatar ${index + 1}`}
+                                        onClick={() => setSelectedAvatar(avatar)}
+                                        sx={{
+                                            width: 60,
+                                            height: 60,
+                                            cursor: 'pointer',
+                                            border: selectedAvatar === avatar ? '3px solid #25d366' : '1px solid #ccc',
+                                        }}
+                                    />
+                                ))}
+                            </Box>
+                            <Box mt={2} display="flex" justifyContent="flex-end" gap={2}>
+                                <Button variant="outlined" onClick={() => setShowAvatarPicker(false)}>
+                                    Cancel
+                                </Button>
+                                <Button variant="contained" onClick={handleSaveAvatar} disabled={!selectedAvatar}>
+                                    Save
+                                </Button>
+                            </Box>
                         </Box>
-                        <Box mt={2} display="flex" justifyContent="flex-end" gap={2}>
-                            <Button variant="outlined" onClick={() => setShowAvatarPicker(false)}>
-                                Cancel
-                            </Button>
-                            <Button variant="contained" onClick={handleSaveAvatar} disabled={!selectedAvatar}>
-                                Save
-                            </Button>
-                        </Box>
-                    </Box>
-                )}
-                {showAvatarPicker && <Box sx={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, bgcolor: 'rgba(0,0,0,0.5)', zIndex: 999 }} onClick={() => setShowAvatarPicker(false)} />}
-            </Container>
+                    )}
+                    {showAvatarPicker && <Box sx={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, bgcolor: 'rgba(0,0,0,0.5)', zIndex: 999 }} onClick={() => setShowAvatarPicker(false)} />}
+                </Container>
+            </Box>
         </ThemeProvider>
     );
 };
