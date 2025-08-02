@@ -12,6 +12,7 @@ import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 
 const BACKEND_SOCKET_URL = 'https://chat-app-backend-0d86.onrender.com';
+const notificationSound = new Audio('https://assets.mixkit.co/sfx/download/mixkit-positive-notification-box-2023.wav');
 
 const createTempMessage = (text, senderId, receiverId) => ({
     _id: `temp-${Date.now()}`,
@@ -90,10 +91,16 @@ const Dashboard = () => {
     
     const playNotificationSound = () => {
         try {
-            const audio = new Audio('https://assets.mixkit.co/sfx/download/mixkit-positive-notification-box-2023.wav');
-            audio.play().catch(e => console.error("Failed to play sound:", e));
+            // Attempt to play the audio. The promise will resolve if successful, or reject if blocked.
+            notificationSound.play().catch(e => {
+                console.error("Audio playback failed:", e.message);
+                if (e.name === 'NotAllowedError') {
+                    console.warn("Autoplay was prevented. A user interaction is required to enable audio.");
+                    toast.info("Click anywhere on the page to enable chat sounds.");
+                }
+            });
         } catch (e) {
-            console.error("Audio playback error:", e);
+            console.error("An unexpected error occurred during audio playback:", e);
         }
     };
     
@@ -102,13 +109,12 @@ const Dashboard = () => {
             new Notification(`New message from ${senderName}`, {
                 body: messageText,
                 icon: senderAvatar || 'https://i.ibb.co/6P6XwWq/avatar7.png',
-                silent: true, // Play custom sound instead of default notification sound
+                silent: true,
             });
         }
     };
     
     useEffect(() => {
-        // Request notification permission on component mount
         if ("Notification" in window) {
             if (Notification.permission === "default") {
                 Notification.requestPermission().then(permission => {
@@ -153,11 +159,9 @@ const Dashboard = () => {
             newSocket.on('newMessage', (message) => {
                 console.log('Received new message:', message);
                 
-                // Play sound and show notification if not the current user
                 if (message.senderId?.toString() !== parsedUser.id?.toString()) {
                     playNotificationSound();
                     
-                    // Show notification only if the sender is not the currently selected user
                     if (!selectedUser || message.senderId?.toString() !== selectedUser._id?.toString()) {
                         const sender = users.find(u => u._id === message.senderId);
                         if (sender) {
@@ -559,7 +563,7 @@ const Dashboard = () => {
                             <Box mt={2} display="flex" justifyContent="flex-end" gap={2}>
                                 <Button variant="outlined" onClick={() => setShowAvatarPicker(false)}>
                                     Cancel
-                                </Button>
+</Button>
                                 <Button variant="contained" onClick={handleSaveAvatar} disabled={!selectedAvatar}>
                                     Save
                                 </Button>
