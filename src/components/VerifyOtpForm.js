@@ -1,9 +1,8 @@
-import { useState, useEffect } from 'react';
-import { Button, Paper, TextField, Typography, Container, CircularProgress, Box } from '@mui/material';
-import { useLocation, useNavigate, Link } from 'react-router-dom';
-import axios from '../utils/AxiosInstance'; // <--- CHANGE THISimport { toast } from 'react-toastify';
+import React, { useState, useEffect } from 'react';
+import { Button, Paper, TextField, Typography, Container, CircularProgress, Box, Link as MuiLink } from '@mui/material';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css'; // Don't forget this for styling!
+import axios from '../utils/AxiosInstance'; // Ensure this path is correct!
 
 const VerifyOtpForm = () => {
     const location = useLocation();
@@ -13,10 +12,7 @@ const VerifyOtpForm = () => {
     const [email, setEmail] = useState('');
 
     useEffect(() => {
-        // Try to get email from location state (preferred, e.g., from SignUpForm success)
         let userEmail = location.state?.email;
-
-        // If not found in state, try to get from URL query parameters
         if (!userEmail) {
             const params = new URLSearchParams(location.search);
             userEmail = params.get('email');
@@ -25,11 +21,10 @@ const VerifyOtpForm = () => {
         if (userEmail) {
             setEmail(userEmail);
         } else {
-            // If no email is provided, redirect to signup or login
             toast.error('No email provided for verification. Please register or login.');
-            navigate('/'); // Or '/login'
+            navigate('/');
         }
-    }, [location.state, location.search, navigate]); // Add location.search to dependencies
+    }, [location.state, location.search, navigate]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -39,10 +34,11 @@ const VerifyOtpForm = () => {
             setLoading(false);
             return;
         }
+
         try {
             const response = await axios.post('/users/verify-otp', { email, otp });
             toast.success(response.data.message);
-
+            
             localStorage.setItem('token', response.data.token);
             localStorage.setItem('user', JSON.stringify(response.data.user));
 
@@ -56,7 +52,7 @@ const VerifyOtpForm = () => {
         }
     };
 
-   const handleResendOtp = async () => {
+    const handleResendOtp = async () => {
         setLoading(true);
         if (!email) {
             toast.error("Email is missing. Cannot resend OTP.");
@@ -64,9 +60,8 @@ const VerifyOtpForm = () => {
             return;
         }
         try {
-            // Make the API call to your new backend endpoint
             const response = await axios.post('/users/resend-otp', { email });
-            toast.success(response.data.message); // Show success message from backend
+            toast.success(response.data.message);
         } catch (error) {
             console.error('Resend OTP error:', error);
             const errorMessage = error.response?.data?.message || "Failed to resend OTP. Please try again.";
@@ -78,12 +73,12 @@ const VerifyOtpForm = () => {
 
     return (
         <Container maxWidth="xs" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <Paper elevation={3} style={{ padding: '30px', width: '100%' }}>
+            <Paper elevation={3} style={{ padding: '30px', width: '100%', borderRadius: '8px' }}>
                 <Typography variant="h5" component="h2" gutterBottom align="center">
                     Verify Your Email
                 </Typography>
                 <Typography variant="body2" color="textSecondary" gutterBottom align="center">
-                    An OTP has been sent to your email: **{email}**
+                    An OTP has been sent to your email: <strong>{email}</strong>
                 </Typography>
                 <form onSubmit={handleSubmit}>
                     <TextField
@@ -109,16 +104,12 @@ const VerifyOtpForm = () => {
                 <Box mt={2} textAlign="center">
                     <Typography variant="body2">
                         Didn't receive OTP?
-                        <Button
-                            onClick={handleResendOtp} // Use the new resend handler
-                            size="small"
-                            disabled={loading}
-                        >
+                        <MuiLink component="button" onClick={handleResendOtp} disabled={loading} style={{ marginLeft: '4px' }}>
                             Resend OTP
-                        </Button>
+                        </MuiLink>
                     </Typography>
                     <Typography variant="body2">
-                        Already verified? <Link to="/login">Login</Link>
+                        Already verified? <MuiLink href="/login">Login</MuiLink>
                     </Typography>
                 </Box>
             </Paper>
