@@ -634,7 +634,6 @@
 
 // export default Dashboard;
 
-
 import React, { useEffect, useState, useRef } from 'react';
 import { Container, Typography, Button, Box, CircularProgress, Paper, List, ListItem, ListItemText, Divider, TextField, Avatar, ListItemAvatar, IconButton, Badge, Popper, Grow, ClickAwayListener, MenuList, MenuItem } from '@mui/material';
 import { createTheme, ThemeProvider, useTheme } from '@mui/material/styles';
@@ -991,15 +990,18 @@ const Dashboard = () => {
             toast.warn('Please select an avatar first.');
             return;
         }
+        console.log('Attempting to save avatar:', selectedAvatar);
         try {
-            await axiosInstance.put('/users/avatar', { avatarUrl: selectedAvatar });
+            const response = await axiosInstance.put('/users/avatar', { avatarUrl: selectedAvatar });
+            console.log('Backend response for avatar update:', response.data);
             const updatedUser = { ...currentUser, avatarUrl: selectedAvatar };
+            console.log('Updated user object to save to local storage:', updatedUser);
             setCurrentUser(updatedUser);
             localStorage.setItem('user', JSON.stringify(updatedUser));
             toast.success('Avatar updated successfully!');
             setShowAvatarPicker(false);
         } catch (error) {
-            console.error('Error updating avatar:', error);
+            console.error('Error updating avatar:', error.response?.data || 'Unknown error');
             toast.error('Failed to update avatar.');
         }
     };
