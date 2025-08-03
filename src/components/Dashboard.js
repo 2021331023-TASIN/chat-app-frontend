@@ -635,7 +635,7 @@
 // export default Dashboard;
 
 import React, { useEffect, useState, useRef } from 'react';
-import { Container, Typography, Button, Box, CircularProgress, Paper, List, ListItem, ListItemText, Divider, TextField, Avatar, ListItemAvatar, IconButton, Badge, Popper, Grow, ClickAwayListener } from '@mui/material';
+import { Container, Typography, Button, Box, CircularProgress, Paper, List, ListItem, ListItemText, Divider, TextField, Avatar, ListItemAvatar, IconButton, Badge, Popper, Grow, ClickAwayListener, Modal } from '@mui/material';
 import { createTheme, ThemeProvider, useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useNavigate } from 'react-router-dom';
@@ -1079,9 +1079,6 @@ const Dashboard = () => {
                 >
                     <Avatar 
                         alt={currentUser.username} 
-                        // ==========================================================
-                        // FIX: Use the cache-busting timestamp here
-                        // ==========================================================
                         src={`${currentUser.avatarUrl}?t=${avatarTimestamp}`} 
                         sx={{ width: 60, height: 60 }} 
                     />
@@ -1303,9 +1300,28 @@ const Dashboard = () => {
                         </>
                     )}
                     
-                    {showAvatarPicker && (
-                        <Box sx={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: 400, bgcolor: 'background.paper', boxShadow: 24, p: 4, borderRadius: 2, zIndex: 1000 }}>
-                            <Typography variant="h6" mb={2}>Choose your avatar</Typography>
+                    {/* ==========================================================
+                        FIX: Use the Material-UI Modal component for better
+                        event handling and accessibility.
+                    ========================================================== */}
+                    <Modal
+                        open={showAvatarPicker}
+                        onClose={() => setShowAvatarPicker(false)}
+                        aria-labelledby="choose-avatar-modal"
+                        aria-describedby="choose-a-new-avatar-for-your-profile"
+                    >
+                        <Box sx={{ 
+                            position: 'absolute', 
+                            top: '50%', 
+                            left: '50%', 
+                            transform: 'translate(-50%, -50%)', 
+                            width: 400, 
+                            bgcolor: 'background.paper', 
+                            boxShadow: 24, 
+                            p: 4, 
+                            borderRadius: 2 
+                        }}>
+                            <Typography variant="h6" mb={2} id="choose-avatar-modal">Choose your avatar</Typography>
                             <Box 
                                 sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, maxHeight: 300, overflowY: 'auto' }}
                             >
@@ -1314,13 +1330,7 @@ const Dashboard = () => {
                                         key={index}
                                         src={avatar}
                                         alt={`Avatar ${index + 1}`}
-                                        onClick={(e) => {
-                                            // ==========================================================
-                                            // FIX: The stopPropagation should work, but for a more robust
-                                            // solution, we're ensuring the click is handled correctly.
-                                            // The core logic here is sound.
-                                            // ==========================================================
-                                            e.stopPropagation();
+                                        onClick={() => {
                                             setSelectedAvatar(avatar);
                                         }}
                                         sx={{
@@ -1348,8 +1358,7 @@ const Dashboard = () => {
                                 </Button>
                             </Box>
                         </Box>
-                    )}
-                    {showAvatarPicker && <Box sx={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, bgcolor: 'rgba(0,0,0,0.5)', zIndex: 999 }} onClick={() => setShowAvatarPicker(false)} />}
+                    </Modal>
                 </Container>
             </Box>
         </ThemeProvider>
