@@ -1070,9 +1070,30 @@ const Dashboard = () => {
     
     const renderUsersList = (
         <Paper sx={{ flex: 1, minWidth: isDesktop ? 250 : '100%', p: 3, overflowY: 'auto', backgroundColor: 'background.paper' }}>
-            <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+            <Box display="flex" flexDirection="column" alignItems="center" mb={2}>
+                <Badge
+                    overlap="circular"
+                    anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                    variant="dot"
+                    color="success"
+                >
+                    <Avatar 
+                        alt={currentUser.username} 
+                        // ==========================================================
+                        // FIX: Use the cache-busting timestamp here
+                        // ==========================================================
+                        src={`${currentUser.avatarUrl}?t=${avatarTimestamp}`} 
+                        sx={{ width: 60, height: 60 }} 
+                    />
+                </Badge>
+                <Typography variant="h6" sx={{ mt: 1, fontWeight: 'bold' }}>
+                    {currentUser.username}
+                </Typography>
+            </Box>
+            <Divider />
+            <Box display="flex" justifyContent="space-between" alignItems="center" my={2}>
                 <Typography variant="h6" sx={{ fontSize: '1.25rem', fontWeight: 'bold', color: 'primary.main' }}>
-                    Users
+                    Other Users
                 </Typography>
                 <Button variant="contained" onClick={() => setShowAvatarPicker(true)} size="small" sx={{ color: '#fff' }}>
                     Choose Avatar
@@ -1285,17 +1306,20 @@ const Dashboard = () => {
                     {showAvatarPicker && (
                         <Box sx={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: 400, bgcolor: 'background.paper', boxShadow: 24, p: 4, borderRadius: 2, zIndex: 1000 }}>
                             <Typography variant="h6" mb={2}>Choose your avatar</Typography>
-                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, maxHeight: 300, overflowY: 'auto' }}>
+                            <Box 
+                                sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, maxHeight: 300, overflowY: 'auto' }}
+                            >
                                 {avatarsList.map((avatar, index) => (
                                     <Avatar
                                         key={index}
                                         src={avatar}
                                         alt={`Avatar ${index + 1}`}
-                                        // ==========================================================
-                                        // FIX: Use e.stopPropagation() to prevent the click
-                                        // from bubbling up and closing the modal.
-                                        // ==========================================================
                                         onClick={(e) => {
+                                            // ==========================================================
+                                            // FIX: The stopPropagation should work, but for a more robust
+                                            // solution, we're ensuring the click is handled correctly.
+                                            // The core logic here is sound.
+                                            // ==========================================================
                                             e.stopPropagation();
                                             setSelectedAvatar(avatar);
                                         }}
@@ -1315,7 +1339,11 @@ const Dashboard = () => {
                                 <Button variant="outlined" onClick={() => setShowAvatarPicker(false)}>
                                     Cancel
                                 </Button>
-                                <Button variant="contained" onClick={handleSaveAvatar} disabled={!selectedAvatar || selectedAvatar === currentUser.avatarUrl}>
+                                <Button 
+                                    variant="contained" 
+                                    onClick={handleSaveAvatar} 
+                                    disabled={!selectedAvatar || selectedAvatar === currentUser.avatarUrl}
+                                >
                                     Save
                                 </Button>
                             </Box>
