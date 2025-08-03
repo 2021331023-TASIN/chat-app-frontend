@@ -732,10 +732,6 @@ const Dashboard = () => {
     const [audioContextUnlocked, setAudioContextUnlocked] = useState(false);
     const [showEmojiPicker, setShowEmojiPicker] = useState(false);
     const emojiPickerRef = useRef(null);
-
-    // ==========================================================
-    // NEW: State for cache-busting the avatar image
-    // ==========================================================
     const [avatarTimestamp, setAvatarTimestamp] = useState(Date.now());
     
     const theme = useTheme();
@@ -820,7 +816,7 @@ const Dashboard = () => {
         try {
             const parsedUser = JSON.parse(storedUser);
             setCurrentUser(parsedUser);
-            setSelectedAvatar(parsedUser.avatarUrl || null);
+            setSelectedAvatar(parsedUser.avatarUrl || null); 
 
             newSocket = io(BACKEND_SOCKET_URL, {
                 query: {
@@ -880,15 +876,12 @@ const Dashboard = () => {
                     return updatedUsers;
                 });
                 
-                // ==========================================================
-                // NEW: Update currentUser and avatarTimestamp for the current user's profile
-                // ==========================================================
                 if (currentUser.id === userId) {
                     setCurrentUser(prevCurrentUser => ({
                         ...prevCurrentUser,
                         avatarUrl: newAvatarUrl
                     }));
-                    setAvatarTimestamp(Date.now()); // Force re-render of the main avatar
+                    setAvatarTimestamp(Date.now());
                 }
             });
 
@@ -1029,11 +1022,25 @@ const Dashboard = () => {
         }
     };
     
+    // ==========================================================
+    // Check if the current avatar URL matches the one in the list.
+    // This is used for highlighting the selected avatar.
+    // ==========================================================
+    const isCurrentAvatar = (avatarUrl) => currentUser?.avatarUrl === avatarUrl;
+
     const handleSaveAvatar = async () => {
         if (!selectedAvatar) {
             toast.warn('Please select an avatar first.');
             return;
         }
+
+        // Check if the user is saving the same avatar
+        if (currentUser.avatarUrl === selectedAvatar) {
+            toast.info('This is already your current avatar.');
+            setShowAvatarPicker(false);
+            return;
+        }
+
         console.log('Attempting to save avatar:', selectedAvatar);
         try {
             const response = await axiosInstance.put('/users/avatar', { avatarUrl: selectedAvatar });
@@ -1043,9 +1050,6 @@ const Dashboard = () => {
             setCurrentUser(updatedUser);
             localStorage.setItem('user', JSON.stringify(updatedUser));
             
-            // ==========================================================
-            // NEW: Update the timestamp to force a re-render and cache-bust
-            // ==========================================================
             setAvatarTimestamp(Date.now());
 
             toast.success('Avatar updated successfully!');
@@ -1102,6 +1106,7 @@ const Dashboard = () => {
                                     variant="dot"
                                     color={onlineUsers.includes(userItem._id) ? "success" : "default"}
                                 >
+                                    {/* Use the cached-busting avatar url for the selected user */}
                                     <Avatar alt={userItem.username} src={userItem.avatarUrl} />
                                 </Badge>
                             </ListItemAvatar>
@@ -1294,11 +1299,18 @@ const Dashboard = () => {
                                         src={avatar}
                                         alt={`Avatar ${index + 1}`}
                                         onClick={() => setSelectedAvatar(avatar)}
+                                        // ==========================================================
+                                        // NEW: Apply a bold border if the avatar is currently selected
+                                        // or if it's the user's current avatar.
+                                        // ==========================================================
                                         sx={{
                                             width: 60,
                                             height: 60,
                                             cursor: 'pointer',
-                                            border: selectedAvatar === avatar ? '3px solid #25d366' : '1px solid #ccc',
+                                            border: selectedAvatar === avatar ? '3px solid #25d366' : isCurrentAvatar(avatar) ? '3px solid #075e54' : '1px solid #ccc',
+                                            '&:hover': {
+                                                opacity: 0.8,
+                                            },
                                         }}
                                     />
                                 ))}
