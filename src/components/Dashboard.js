@@ -635,7 +635,7 @@
 // export default Dashboard;
 
 import React, { useEffect, useState, useRef } from 'react';
-import { Container, Typography, Button, Box, CircularProgress, Paper, List, ListItem, ListItemText, Divider, TextField, Avatar, ListItemAvatar, IconButton, Badge, Popper, Grow, ClickAwayListener, MenuList, MenuItem } from '@mui/material';
+import { Container, Typography, Button, Box, CircularProgress, Paper, List, ListItem, ListItemText, Divider, TextField, Avatar, ListItemAvatar, IconButton, Badge, Popper, Grow, ClickAwayListener } from '@mui/material';
 import { createTheme, ThemeProvider, useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useNavigate } from 'react-router-dom';
@@ -671,7 +671,6 @@ const createTempMessage = (text, senderId, receiverId) => ({
     senderUsername: 'You',
 });
 
-// WhatsApp inspired theme
 const whatsAppTheme = createTheme({
     palette: {
         primary: {
@@ -1022,10 +1021,6 @@ const Dashboard = () => {
         }
     };
     
-    // ==========================================================
-    // Check if the current avatar URL matches the one in the list.
-    // This is used for highlighting the selected avatar.
-    // ==========================================================
     const isCurrentAvatar = (avatarUrl) => currentUser?.avatarUrl === avatarUrl;
 
     const handleSaveAvatar = async () => {
@@ -1034,7 +1029,6 @@ const Dashboard = () => {
             return;
         }
 
-        // Check if the user is saving the same avatar
         if (currentUser.avatarUrl === selectedAvatar) {
             toast.info('This is already your current avatar.');
             setShowAvatarPicker(false);
@@ -1106,7 +1100,6 @@ const Dashboard = () => {
                                     variant="dot"
                                     color={onlineUsers.includes(userItem._id) ? "success" : "default"}
                                 >
-                                    {/* Use the cached-busting avatar url for the selected user */}
                                     <Avatar alt={userItem.username} src={userItem.avatarUrl} />
                                 </Badge>
                             </ListItemAvatar>
@@ -1298,11 +1291,14 @@ const Dashboard = () => {
                                         key={index}
                                         src={avatar}
                                         alt={`Avatar ${index + 1}`}
-                                        onClick={() => setSelectedAvatar(avatar)}
                                         // ==========================================================
-                                        // NEW: Apply a bold border if the avatar is currently selected
-                                        // or if it's the user's current avatar.
+                                        // FIX: Use e.stopPropagation() to prevent the click
+                                        // from bubbling up and closing the modal.
                                         // ==========================================================
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setSelectedAvatar(avatar);
+                                        }}
                                         sx={{
                                             width: 60,
                                             height: 60,
@@ -1319,7 +1315,7 @@ const Dashboard = () => {
                                 <Button variant="outlined" onClick={() => setShowAvatarPicker(false)}>
                                     Cancel
                                 </Button>
-                                <Button variant="contained" onClick={handleSaveAvatar} disabled={!selectedAvatar}>
+                                <Button variant="contained" onClick={handleSaveAvatar} disabled={!selectedAvatar || selectedAvatar === currentUser.avatarUrl}>
                                     Save
                                 </Button>
                             </Box>
