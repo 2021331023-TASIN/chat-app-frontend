@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { Button, Paper, TextField, Typography, Container, CircularProgress, Box } from '@mui/material';
-import axios from '../utils/AxiosInstance'; // <--- CHANGE THISimport { toast } from 'react-toastify';
+import axios from '../utils/AxiosInstance';
 import { useNavigate, Link } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css'; // Don't forget this for styling!
+import 'react-toastify/dist/ReactToastify.css';
 
 const SignUpForm = () => {
     const [form, setForm] = useState({ username: '', email: '', password: '' });
@@ -16,20 +16,21 @@ const SignUpForm = () => {
         try {
             const response = await axios.post('/users/register', form);
             toast.success(response.data.message);
-            // Pass the email to the verification page via state
-            navigate('/verify', { state: { email: form.email } });
+            
+            // CORRECTED: Use the correct route path for the verification page
+            navigate('/verify-otp', { state: { email: form.email } });
+            
         } catch (error) {
             console.error('Signup error:', error);
             const errorMessage = error.response?.data?.message || 'Something went wrong during registration. Please try again.';
             toast.error(errorMessage);
 
-            // === NEW CODE FOR SIGNUPFORM ===
             if (error.response && error.response.status === 400 && error.response.data.message.includes("User already registered but not verified")) {
                 toast.info("Redirecting to verification page...");
-                navigate(`/verify?email=${encodeURIComponent(form.email)}`); // Redirect and pass email as query param
+                
+                // CORRECTED: Use the correct route path for the verification page
+                navigate(`/verify-otp?email=${encodeURIComponent(form.email)}`);
             }
-            // ===============================
-
         } finally {
             setLoading(false);
         }
