@@ -649,9 +649,6 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import EmojiEmotionsIcon from '@mui/icons-material/EmojiEmotions';
 import Picker from 'emoji-picker-react';
 
-// ==========================================================
-// UPDATED: Import your local avatar images using relative paths
-// ==========================================================
 import avatar1 from '../avatars/avatar-1.png';
 import avatar2 from '../avatars/avatar-2.png';
 import avatar3 from '../avatars/avatar-3.png';
@@ -685,8 +682,8 @@ const whatsAppTheme = createTheme({
             main: '#25d366',
         },
         background: {
-            default: '#ece5dd', // Chat background
-            paper: '#ffffff',  // Sidebar and chat container background
+            default: '#ece5dd',
+            paper: '#ffffff',
         },
         text: {
             primary: '#000000',
@@ -708,9 +705,6 @@ const whatsAppTheme = createTheme({
     },
 });
 
-// ==========================================================
-// UPDATED: Use the imported variables in your avatarsList array
-// ==========================================================
 const avatarsList = [
     avatar1,
     avatar2,
@@ -738,6 +732,11 @@ const Dashboard = () => {
     const [audioContextUnlocked, setAudioContextUnlocked] = useState(false);
     const [showEmojiPicker, setShowEmojiPicker] = useState(false);
     const emojiPickerRef = useRef(null);
+
+    // ==========================================================
+    // NEW: State for cache-busting the avatar image
+    // ==========================================================
+    const [avatarTimestamp, setAvatarTimestamp] = useState(Date.now());
     
     const theme = useTheme();
     const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
@@ -761,7 +760,7 @@ const Dashboard = () => {
         if (Notification.permission === "granted") {
             new Notification(`New message from ${senderName}`, {
                 body: messageText,
-                icon: senderAvatar || avatar7, // Fallback to a local avatar
+                icon: senderAvatar || avatar7,
                 silent: true,
             });
         }
@@ -860,6 +859,38 @@ const Dashboard = () => {
                 console.log('Online users:', users);
                 setOnlineUsers(users);
             });
+            
+            newSocket.on('userProfileUpdated', ({ userId, newAvatarUrl }) => {
+                console.log(`User profile updated for userId: ${userId}, new avatar: ${newAvatarUrl}`);
+                setUsers(prevUsers => {
+                    const updatedUsers = prevUsers.map(user => {
+                        if (user._id === userId) {
+                            return { ...user, avatarUrl: newAvatarUrl };
+                        }
+                        return user;
+                    });
+                    
+                    if (selectedUser && selectedUser._id === userId) {
+                        setSelectedUser(prevSelectedUser => ({
+                            ...prevSelectedUser,
+                            avatarUrl: newAvatarUrl
+                        }));
+                    }
+                    
+                    return updatedUsers;
+                });
+                
+                // ==========================================================
+                // NEW: Update currentUser and avatarTimestamp for the current user's profile
+                // ==========================================================
+                if (currentUser.id === userId) {
+                    setCurrentUser(prevCurrentUser => ({
+                        ...prevCurrentUser,
+                        avatarUrl: newAvatarUrl
+                    }));
+                    setAvatarTimestamp(Date.now()); // Force re-render of the main avatar
+                }
+            });
 
             newSocket.on('disconnect', () => {
                 console.log('Socket.IO disconnected!');
@@ -873,6 +904,7 @@ const Dashboard = () => {
                 console.log('Cleaning up Socket.IO connection...');
                 newSocket.off('newMessage');
                 newSocket.off('getOnlineUsers');
+                newSocket.off('userProfileUpdated');
                 newSocket.disconnect();
             };
 
@@ -1010,6 +1042,12 @@ const Dashboard = () => {
             console.log('Updated user object to save to local storage:', updatedUser);
             setCurrentUser(updatedUser);
             localStorage.setItem('user', JSON.stringify(updatedUser));
+            
+            // ==========================================================
+            // NEW: Update the timestamp to force a re-render and cache-bust
+            // ==========================================================
+            setAvatarTimestamp(Date.now());
+
             toast.success('Avatar updated successfully!');
             setShowAvatarPicker(false);
         } catch (error) {
@@ -1018,7 +1056,6 @@ const Dashboard = () => {
         }
     };
 
-    // New function to handle emoji selection
     const onEmojiClick = (emojiObject) => {
         setNewMessage((prevMessage) => prevMessage + emojiObject.emoji);
         setShowEmojiPicker(false);
