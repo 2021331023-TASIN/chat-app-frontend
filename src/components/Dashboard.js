@@ -646,8 +646,20 @@ import { io } from 'socket.io-client';
 import SendIcon from '@mui/icons-material/Send';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import EmojiEmotionsIcon from '@mui/icons-material/EmojiEmotions'; // New Icon
-import Picker from 'emoji-picker-react'; // Import the emoji picker component
+import EmojiEmotionsIcon from '@mui/icons-material/EmojiEmotions';
+import Picker from 'emoji-picker-react';
+
+// ==========================================================
+// UPDATED: Import your local avatar images using relative paths
+// ==========================================================
+import avatar1 from '../avatars/avatar-1.png';
+import avatar2 from '../avatars/avatar-2.png';
+import avatar3 from '../avatars/avatar-3.png';
+import avatar4 from '../avatars/avatar-4.png';
+import avatar5 from '../avatars/avatar-5.png';
+import avatar6 from '../avatars/avatar-6.png';
+import avatar7 from '../avatars/avatar-7.png';
+import avatar8 from '../avatars/avatar-8.png';
 
 const BACKEND_SOCKET_URL = 'https://chat-app-backend-0d86.onrender.com';
 const notificationSound = new Audio('https://assets.mixkit.co/sfx/download/mixkit-positive-notification-box-2023.wav');
@@ -696,17 +708,18 @@ const whatsAppTheme = createTheme({
     },
 });
 
+// ==========================================================
+// UPDATED: Use the imported variables in your avatarsList array
+// ==========================================================
 const avatarsList = [
-    'https://storage.googleapis.com/gsearch_images/cartoon-avatar-1.png',
-    'https://storage.googleapis.com/gsearch_images/cartoon-avatar-2.png',
-    'https://storage.googleapis.com/gsearch_images/cartoon-avatar-3.png',
-    'https://storage.googleapis.com/gsearch_images/cartoon-avatar-4.png',
-    'https://storage.googleapis.com/gsearch_images/cartoon-avatar-5.png',
-    'https://storage.googleapis.com/gsearch_images/cartoon-avatar-6.png',
-    'https://storage.googleapis.com/gsearch_images/cartoon-avatar-7.png',
-    'https://storage.googleapis.com/gsearch_images/cartoon-avatar-8.png',
-    'https://storage.googleapis.com/gsearch_images/cartoon-avatar-9.png',
-    'https://storage.googleapis.com/gsearch_images/cartoon-avatar-10.png',
+    avatar1,
+    avatar2,
+    avatar3,
+    avatar4,
+    avatar5,
+    avatar6,
+    avatar7,
+    avatar8,
 ];
 
 const Dashboard = () => {
@@ -723,14 +736,13 @@ const Dashboard = () => {
     const [selectedAvatar, setSelectedAvatar] = useState(null);
     const [onlineUsers, setOnlineUsers] = useState([]);
     const [audioContextUnlocked, setAudioContextUnlocked] = useState(false);
-    const [showEmojiPicker, setShowEmojiPicker] = useState(false); // New state for emoji picker
-    const emojiPickerRef = useRef(null); // Ref for the emoji picker anchor
+    const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+    const emojiPickerRef = useRef(null);
     
     const theme = useTheme();
     const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
     const [showUsersList, setShowUsersList] = useState(true);
     
-    // ... (rest of your existing code - playNotificationSound, showDesktopNotification, useEffects, etc.)
     const playNotificationSound = () => {
         if (!audioContextUnlocked) {
             console.warn("Audio context is not yet unlocked. Skipping sound.");
@@ -749,7 +761,7 @@ const Dashboard = () => {
         if (Notification.permission === "granted") {
             new Notification(`New message from ${senderName}`, {
                 body: messageText,
-                icon: senderAvatar || 'https://storage.googleapis.com/gsearch_images/cartoon-avatar-7.png',
+                icon: senderAvatar || avatar7, // Fallback to a local avatar
                 silent: true,
             });
         }
