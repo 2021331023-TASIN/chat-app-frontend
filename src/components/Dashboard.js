@@ -726,7 +726,6 @@ const Dashboard = () => {
     const [socket, setSocket] = useState(null);
     const messagesEndRef = useRef(null);
     const [showAvatarPicker, setShowAvatarPicker] = useState(false);
-    const [selectedAvatar, setSelectedAvatar] = useState(null);
     const [onlineUsers, setOnlineUsers] = useState([]);
     const [audioContextUnlocked, setAudioContextUnlocked] = useState(false);
     const [showEmojiPicker, setShowEmojiPicker] = useState(false);
@@ -815,7 +814,6 @@ const Dashboard = () => {
         try {
             const parsedUser = JSON.parse(storedUser);
             setCurrentUser(parsedUser);
-            setSelectedAvatar(parsedUser.avatarUrl || null); 
 
             newSocket = io(BACKEND_SOCKET_URL, {
                 query: {
@@ -1020,32 +1018,22 @@ const Dashboard = () => {
             toast.warn("Please select a user to chat with first!");
         }
     };
-    
-    const isCurrentAvatar = (avatarUrl) => currentUser?.avatarUrl === avatarUrl;
 
-    const handleSaveAvatar = async () => {
-        if (!selectedAvatar) {
-            toast.warn('Please select an avatar first.');
-            return;
-        }
-
-        if (currentUser.avatarUrl === selectedAvatar) {
+    const handleAvatarClick = async (avatarUrl) => {
+        if (currentUser.avatarUrl === avatarUrl) {
             toast.info('This is already your current avatar.');
             setShowAvatarPicker(false);
             return;
         }
 
-        console.log('Attempting to save avatar:', selectedAvatar);
         try {
-            const response = await axiosInstance.put('/users/avatar', { avatarUrl: selectedAvatar });
+            const response = await axiosInstance.put('/users/avatar', { avatarUrl });
             console.log('Backend response for avatar update:', response.data);
-            const updatedUser = { ...currentUser, avatarUrl: selectedAvatar };
-            console.log('Updated user object to save to local storage:', updatedUser);
+            const updatedUser = { ...currentUser, avatarUrl: avatarUrl };
             setCurrentUser(updatedUser);
             localStorage.setItem('user', JSON.stringify(updatedUser));
             
             setAvatarTimestamp(Date.now());
-
             toast.success('Avatar updated successfully!');
             setShowAvatarPicker(false);
         } catch (error) {
@@ -1053,6 +1041,8 @@ const Dashboard = () => {
             toast.error('Failed to update avatar.');
         }
     };
+    
+    const isCurrentAvatar = (avatarUrl) => currentUser?.avatarUrl === avatarUrl;
 
     const onEmojiClick = (emojiObject) => {
         setNewMessage((prevMessage) => prevMessage + emojiObject.emoji);
@@ -1300,10 +1290,6 @@ const Dashboard = () => {
                         </>
                     )}
                     
-                    {/* ==========================================================
-                        FIX: Use the Material-UI Modal component for better
-                        event handling and accessibility.
-                    ========================================================== */}
                     <Modal
                         open={showAvatarPicker}
                         onClose={() => setShowAvatarPicker(false)}
@@ -1330,32 +1316,19 @@ const Dashboard = () => {
                                         key={index}
                                         src={avatar}
                                         alt={`Avatar ${index + 1}`}
-                                        onClick={() => {
-                                            setSelectedAvatar(avatar);
-                                        }}
+                                        onClick={() => handleAvatarClick(avatar)}
                                         sx={{
                                             width: 60,
                                             height: 60,
                                             cursor: 'pointer',
-                                            border: selectedAvatar === avatar ? '3px solid #25d366' : isCurrentAvatar(avatar) ? '3px solid #075e54' : '1px solid #ccc',
+                                            // The border now highlights the user's current avatar
+                                            border: isCurrentAvatar(avatar) ? '3px solid #075e54' : '1px solid #ccc',
                                             '&:hover': {
                                                 opacity: 0.8,
                                             },
                                         }}
                                     />
                                 ))}
-                            </Box>
-                            <Box mt={2} display="flex" justifyContent="flex-end" gap={2}>
-                                <Button variant="outlined" onClick={() => setShowAvatarPicker(false)}>
-                                    Cancel
-                                </Button>
-                                <Button 
-                                    variant="contained" 
-                                    onClick={handleSaveAvatar} 
-                                    disabled={!selectedAvatar || selectedAvatar === currentUser.avatarUrl}
-                                >
-                                    Save
-                                </Button>
                             </Box>
                         </Box>
                     </Modal>
