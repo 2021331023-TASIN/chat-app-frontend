@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { Container, Typography, Button, Box, CircularProgress, Paper, List, ListItem, ListItemText, Divider, TextField, Avatar, ListItemAvatar, IconButton, Badge } from '@mui/material';
+import { Container, Typography, Button, Box, CircularProgress, Paper, List, ListItem, ListItemText, Divider, TextField, Avatar, ListItemAvatar, IconButton, Badge, Popper, Grow, ClickAwayListener, MenuList, MenuItem } from '@mui/material';
 import { createTheme, ThemeProvider, useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useNavigate } from 'react-router-dom';
@@ -10,6 +10,8 @@ import { io } from 'socket.io-client';
 import SendIcon from '@mui/icons-material/Send';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import EmojiEmotionsIcon from '@mui/icons-material/EmojiEmotions'; // New Icon
+import Picker from 'emoji-picker-react'; // Import the emoji picker component
 
 const BACKEND_SOCKET_URL = 'https://chat-app-backend-0d86.onrender.com';
 const notificationSound = new Audio('https://assets.mixkit.co/sfx/download/mixkit-positive-notification-box-2023.wav');
@@ -85,11 +87,14 @@ const Dashboard = () => {
     const [selectedAvatar, setSelectedAvatar] = useState(null);
     const [onlineUsers, setOnlineUsers] = useState([]);
     const [audioContextUnlocked, setAudioContextUnlocked] = useState(false);
+    const [showEmojiPicker, setShowEmojiPicker] = useState(false); // New state for emoji picker
+    const emojiPickerRef = useRef(null); // Ref for the emoji picker anchor
     
     const theme = useTheme();
     const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
     const [showUsersList, setShowUsersList] = useState(true);
     
+    // ... (rest of your existing code - playNotificationSound, showDesktopNotification, useEffects, etc.)
     const playNotificationSound = () => {
         if (!audioContextUnlocked) {
             console.warn("Audio context is not yet unlocked. Skipping sound.");
@@ -128,11 +133,9 @@ const Dashboard = () => {
         }
     }, []);
 
-    // New useEffect to handle audio context unlock on user interaction
     useEffect(() => {
         const unlockAudio = () => {
             if (!audioContextUnlocked) {
-                // Play a tiny, silent sound to unlock the audio context
                 notificationSound.muted = true;
                 notificationSound.play().then(() => {
                     notificationSound.pause();
@@ -148,7 +151,6 @@ const Dashboard = () => {
         document.addEventListener('click', unlockAudio, { once: true });
         document.addEventListener('mousedown', unlockAudio, { once: true });
 
-        // Cleanup
         return () => {
             document.removeEventListener('click', unlockAudio);
             document.removeEventListener('mousedown', unlockAudio);
@@ -365,6 +367,12 @@ const Dashboard = () => {
         }
     };
 
+    // New function to handle emoji selection
+    const onEmojiClick = (emojiObject) => {
+      setNewMessage((prevMessage) => prevMessage + emojiObject.emoji);
+      setShowEmojiPicker(false);
+    };
+
     if (loading || !currentUser) {
         return (
             <Container maxWidth="md" sx={{ mt: 8, textAlign: 'center' }}>
@@ -498,7 +506,10 @@ const Dashboard = () => {
                             })
                         )}
                     </Box>
-                    <Box sx={{ display: 'flex', gap: 1 }}>
+                    <Box sx={{ display: 'flex', gap: 1, position: 'relative' }}>
+                        <IconButton ref={emojiPickerRef} onClick={() => setShowEmojiPicker((prev) => !prev)}>
+                            <EmojiEmotionsIcon color="primary" />
+                        </IconButton>
                         <TextField
                             fullWidth
                             variant="outlined"
@@ -519,6 +530,22 @@ const Dashboard = () => {
                         >
                             Send
                         </Button>
+                        <Popper open={showEmojiPicker} anchorEl={emojiPickerRef.current} role={undefined} transition disablePortal sx={{ zIndex: 1200 }}>
+                          {({ TransitionProps, placement }) => (
+                            <Grow
+                              {...TransitionProps}
+                              style={{
+                                transformOrigin: placement === 'bottom' ? 'center top' : 'center bottom',
+                              }}
+                            >
+                              <Paper>
+                                <ClickAwayListener onClickAway={() => setShowEmojiPicker(false)}>
+                                  <Picker onEmojiClick={onEmojiClick} />
+                                </ClickAwayListener>
+                              </Paper>
+                            </Grow>
+                          )}
+                        </Popper>
                     </Box>
                 </>
             ) : (
@@ -561,9 +588,9 @@ const Dashboard = () => {
                             {!showUsersList && selectedUser && renderChatWindow}
                             {!showUsersList && !selectedUser && (
                                <Box sx={{ flexGrow: 1, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                                 <Typography variant="h6" color="text.secondary">
-                                   Select a user from the list to chat!
-                                 </Typography>
+                                   <Typography variant="h6" color="text.secondary">
+                                      Select a user from the list to chat!
+                                   </Typography>
                                </Box>
                             )}
                         </>
