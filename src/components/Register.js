@@ -1,46 +1,32 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { Container, Typography, TextField, Button, CircularProgress, Box, Paper, IconButton } from '@mui/material';
-import { createTheme, ThemeProvider } from '@mui/material/styles';
+import { useNavigate } from 'react-router-dom';
+import { Button, Paper, TextField, Typography, Container, CircularProgress, Link as MuiLink } from '@mui/material';
 import { toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
-import axios from 'axios';
-import WhatsAppIcon from '@mui/icons-material/WhatsApp';
-
-// ✅ UPDATED: The API URL now includes the '/api' prefix
-const API_URL = 'https://chat-app-backend-0d86.onrender.com/api';
-
-const whatsAppAuthTheme = createTheme({
-    palette: {
-        primary: {
-            main: '#075e54',
-        },
-        secondary: {
-            main: '#25d366',
-        },
-        background: {
-            default: '#ece5dd',
-            paper: '#ffffff',
-        },
-    },
-});
+import axios from '../utils/AxiosInstance'; // Ensure this path is correct!
 
 const Register = () => {
-    const [username, setUsername] = useState('');
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
+    const [form, setForm] = useState({ username: '', email: '', password: '' });
+    const [loading, setLoading] = useState(false);
 
-    const handleRegister = async (e) => {
+    const handleChange = (e) => {
+        setForm({ ...form, [e.target.name]: e.target.value });
+    };
+
+    const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
         try {
-            // ✅ UPDATED: The request now uses the correct URL: /api/users/register
-            const response = await axios.post(`${API_URL}/users/register`, { username, email, password });
-            toast.success(response.data.message);
-            navigate('/verify-otp');
+            // Make the API call to your backend for user registration
+            await axios.post('/users/register', form);
+            toast.success('Registration successful! Please check your email for OTP.');
+
+            // ✅ THIS IS THE FIX: Navigate to the OTP verification page
+            // and pass the email state to the next component
+            navigate('/verify-otp', { state: { email: form.email } });
+
         } catch (error) {
+            console.error('Registration error:', error);
             const errorMessage = error.response?.data?.message || 'Registration failed. Please try again.';
             toast.error(errorMessage);
         } finally {
@@ -49,80 +35,57 @@ const Register = () => {
     };
 
     return (
-        <ThemeProvider theme={whatsAppAuthTheme}>
-            <Box
-                sx={{
-                    display: 'flex',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    minHeight: '100vh',
-                    backgroundColor: 'background.default',
-                }}
-            >
-                <Paper elevation={3} sx={{ p: 4, width: '100%', maxWidth: 400, textAlign: 'center', borderRadius: 2 }}>
-                    <Box sx={{ mb: 3 }}>
-                        <IconButton color="primary" sx={{ fontSize: 64, mb: 1 }}>
-                            <WhatsAppIcon sx={{ fontSize: 'inherit' }} />
-                        </IconButton>
-                        <Typography variant="h5" component="h1" gutterBottom sx={{ color: 'primary.main', fontWeight: 'bold' }}>
-                            Create a New Account
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                            Fill in your details to get started
-                        </Typography>
-                    </Box>
-                    <Box component="form" onSubmit={handleRegister} sx={{ mt: 1 }}>
-                        <TextField
-                            margin="normal"
-                            required
-                            fullWidth
-                            id="username"
-                            label="Username"
-                            name="username"
-                            autoComplete="username"
-                            autoFocus
-                            value={username}
-                            onChange={(e) => setUsername(e.target.value)}
-                        />
-                        <TextField
-                            margin="normal"
-                            required
-                            fullWidth
-                            id="email"
-                            label="Email Address"
-                            name="email"
-                            autoComplete="email"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                        />
-                        <TextField
-                            margin="normal"
-                            required
-                            fullWidth
-                            name="password"
-                            label="Password"
-                            type="password"
-                            id="password"
-                            autoComplete="new-password"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                        />
-                        <Button
-                            type="submit"
-                            fullWidth
-                            variant="contained"
-                            sx={{ mt: 3, mb: 2, py: 1.5, backgroundColor: 'secondary.main', '&:hover': { backgroundColor: 'primary.main' } }}
-                            disabled={loading}
-                        >
-                            {loading ? <CircularProgress size={24} /> : 'Sign Up'}
-                        </Button>
-                    </Box>
-                    <Typography variant="body2" color="text.secondary">
-                        Already have an account? <Link to="/login" style={{ color: whatsAppAuthTheme.palette.primary.main, textDecoration: 'none', fontWeight: 'bold' }}>Login</Link>
-                    </Typography>
-                </Paper>
-            </Box>
-        </ThemeProvider>
+        <Container maxWidth="xs" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Paper elevation={3} style={{ padding: '30px', width: '100%', borderRadius: '8px' }}>
+                <Typography variant="h5" align="center" gutterBottom>
+                    Sign Up
+                </Typography>
+                <form onSubmit={handleSubmit}>
+                    <TextField
+                        name="username"
+                        label="Username"
+                        fullWidth
+                        margin="normal"
+                        value={form.username}
+                        onChange={handleChange}
+                        required
+                    />
+                    <TextField
+                        name="email"
+                        label="Email"
+                        type="email"
+                        fullWidth
+                        margin="normal"
+                        value={form.email}
+                        onChange={handleChange}
+                        required
+                    />
+                    <TextField
+                        name="password"
+                        label="Password"
+                        type="password"
+                        fullWidth
+                        margin="normal"
+                        value={form.password}
+                        onChange={handleChange}
+                        required
+                    />
+                    <Button
+                        type="submit"
+                        variant="contained"
+                        color="primary"
+                        fullWidth
+                        disabled={loading}
+                        style={{ marginTop: '20px' }}
+                    >
+                        {loading ? <CircularProgress size={24} /> : 'Sign Up'}
+                    </Button>
+                </form>
+                <Typography variant="body2" align="center" style={{ marginTop: '10px' }}>
+                    Already have an account? <MuiLink href="/login">Login</MuiLink>
+                </Typography>
+            </Paper>
+        </Container>
     );
 };
 
